@@ -144,20 +144,6 @@ npm install
 node server.js
 ```
 
-**`.env` required variables:**
-
-```
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/fitforge
-JWT_SECRET=your_secret_key
-JWT_EXPIRE=14d
-EMAIL_USER=fitforge.noreply@gmail.com
-EMAIL_PASSWORD=your_gmail_app_password
-EMAIL_FROM=FitForge <fitforge.noreply@gmail.com>
-```
-
-> `EMAIL_PASSWORD` must be a **Google App Password** (16-char), not your regular Gmail password.
-> Generate one at myaccount.google.com/apppasswords.
 
 ### Frontend
 
