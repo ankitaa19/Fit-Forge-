@@ -22,6 +22,17 @@ class Sidebar extends StatelessWidget {
     this.onItemSelected,
   });
 
+  static PageRoute<T> _buildNoTransitionRoute<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return child;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -81,8 +92,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'dashboard') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => DashboardPage(user: user),
+                          _buildNoTransitionRoute(
+                            DashboardPage(user: user),
                           ),
                         );
                       }
@@ -97,8 +108,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'exercises') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => ExercisesPage(
+                          _buildNoTransitionRoute(
+                            ExercisesPage(
                               key: ValueKey(
                                 user?['fitnessGoal'] ?? 'exercises',
                               ),
@@ -118,8 +129,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'workouts') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => MyWorkoutsPage(user: user),
+                          _buildNoTransitionRoute(
+                            MyWorkoutsPage(user: user),
                           ),
                         );
                       }
@@ -134,8 +145,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'diet') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => DietPlanPage(user: user),
+                          _buildNoTransitionRoute(
+                            DietPlanPage(user: user),
                           ),
                         );
                       }
@@ -150,9 +161,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'progress') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ProgressChartsPage(user: user),
+                          _buildNoTransitionRoute(
+                            ProgressChartsPage(user: user),
                           ),
                         );
                       }
@@ -167,8 +177,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'achievements') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => AchievementsPage(user: user),
+                          _buildNoTransitionRoute(
+                            AchievementsPage(user: user),
                           ),
                         );
                       }
@@ -183,8 +193,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'bmi') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => BMICalculatorPage(user: user),
+                          _buildNoTransitionRoute(
+                            BMICalculatorPage(user: user),
                           ),
                         );
                       }
@@ -199,8 +209,8 @@ class Sidebar extends StatelessWidget {
                       if (currentPage != 'settings') {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => SettingsPage(user: user),
+                          _buildNoTransitionRoute(
+                            SettingsPage(user: user),
                           ),
                         );
                       }
@@ -223,7 +233,7 @@ class Sidebar extends StatelessWidget {
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  _buildNoTransitionRoute(const LoginPage()),
                   (route) => false,
                 );
               }
