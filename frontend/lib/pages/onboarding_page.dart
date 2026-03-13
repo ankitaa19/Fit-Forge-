@@ -174,18 +174,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildStepContent(),
-              const SizedBox(height: 48),
-              _buildContinueButton(),
-            ],
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildStepContent(),
+                SizedBox(height: isMobile ? 24 : 48),
+                _buildContinueButton(),
+              ],
+            ),
           ),
         ),
       ),
@@ -206,33 +209,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildFitnessGoalStep() {
+    final isMobile = Responsive.isMobile(context);
     return Column(
       children: [
         // Icon
         Container(
-          width: 80,
-          height: 80,
+          width: isMobile ? 64 : 80,
+          height: isMobile ? 64 : 80,
           decoration: BoxDecoration(
             color: const Color(0xFFB4F405).withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
           ),
           child: const Center(
-            child: Text('🎯', style: TextStyle(fontSize: 40)),
+            child: Text('🎯', style: TextStyle(fontSize: 36)),
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: isMobile ? 20 : 32),
 
         // Title
-        const Text(
+        Text(
           'What\'s your fitness goal?',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: isMobile ? 24 : 28,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 48),
+        SizedBox(height: isMobile ? 28 : 48),
 
         // Goal options grid
         Container(
@@ -241,10 +245,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
             builder: (context, constraints) {
               final count = Responsive.gridCount(
                 constraints.maxWidth,
-                minTileWidth: 220,
+                minTileWidth: isMobile ? 160 : 220,
                 maxCount: 2,
               );
-              final aspect = count == 1 ? 2.2 : 1.5;
+              final aspect = isMobile
+                  ? (count == 1 ? 2.6 : 1.8)
+                  : (count == 1 ? 2.2 : 1.5);
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -267,7 +273,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(isMobile ? 14 : 20),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1A1A),
                         borderRadius: BorderRadius.circular(16),
@@ -283,13 +289,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         children: [
                           Text(
                             goal['emoji'],
-                            style: const TextStyle(fontSize: 36),
+                            style: TextStyle(fontSize: isMobile ? 28 : 36),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: isMobile ? 8 : 12),
                           Text(
                             goal['name'],
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: isMobile ? 14 : 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
@@ -309,31 +315,32 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildFitnessLevelStep() {
+    final isMobile = Responsive.isMobile(context);
     return Column(
       children: [
         // Icon
         Container(
-          width: 80,
-          height: 80,
+          width: isMobile ? 64 : 80,
+          height: isMobile ? 64 : 80,
           decoration: BoxDecoration(
             color: const Color(0xFFB4F405).withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
           ),
-          child: const Center(child: Text('⚡', style: TextStyle(fontSize: 40))),
+          child: const Center(child: Text('⚡', style: TextStyle(fontSize: 36))),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: isMobile ? 20 : 32),
 
         // Title
-        const Text(
+        Text(
           'Your fitness level?',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: isMobile ? 24 : 28,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 48),
+        SizedBox(height: isMobile ? 28 : 48),
 
         // Level options
         Container(
@@ -343,7 +350,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               final isSelected = _selectedFitnessLevel == level['name'];
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+                padding: EdgeInsets.only(bottom: isMobile ? 12 : 16),
                 child: InkWell(
                   onTap: () {
                     setState(() {
@@ -352,7 +359,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(isMobile ? 16 : 24),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1A1A1A),
                       borderRadius: BorderRadius.circular(16),
@@ -368,17 +375,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       children: [
                         Text(
                           level['name'],
-                          style: const TextStyle(
-                            fontSize: 18,
+                          style: TextStyle(
+                            fontSize: isMobile ? 16 : 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: isMobile ? 2 : 4),
                         Text(
                           level['description'],
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isMobile ? 13 : 14,
                             color: Colors.grey[400],
                           ),
                         ),
@@ -395,31 +402,32 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   Widget _buildWorkoutPreferencesStep() {
+    final isMobile = Responsive.isMobile(context);
     return Column(
       children: [
         // Icon
         Container(
-          width: 80,
-          height: 80,
+          width: isMobile ? 64 : 80,
+          height: isMobile ? 64 : 80,
           decoration: BoxDecoration(
             color: const Color(0xFFB4F405).withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
           ),
-          child: const Center(child: Text('⏰', style: TextStyle(fontSize: 40))),
+          child: const Center(child: Text('⏰', style: TextStyle(fontSize: 36))),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: isMobile ? 20 : 32),
 
         // Title
-        const Text(
+        Text(
           'Workout preferences',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: isMobile ? 24 : 28,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 48),
+        SizedBox(height: isMobile ? 28 : 48),
 
         Container(
           constraints: const BoxConstraints(maxWidth: 500),
@@ -427,11 +435,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Days per week
-              const Text(
+              Text(
                 'Days per week',
-                style: TextStyle(fontSize: 16, color: Color(0xFF9E9E9E)),
+                style: TextStyle(
+                  fontSize: isMobile ? 14 : 16,
+                  color: const Color(0xFF9E9E9E),
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: isMobile ? 12 : 16),
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
@@ -446,8 +457,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      width: 60,
-                      height: 60,
+                      width: isMobile ? 52 : 60,
+                      height: isMobile ? 52 : 60,
                       decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFFB4F405)
@@ -458,7 +469,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         child: Text(
                           days.toString(),
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: isMobile ? 20 : 24,
                             fontWeight: FontWeight.bold,
                             color: isSelected
                                 ? const Color(0xFF1A1A1A)
@@ -470,14 +481,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: isMobile ? 28 : 48),
 
               // Minutes per session
-              const Text(
+              Text(
                 'Minutes per session',
-                style: TextStyle(fontSize: 16, color: Color(0xFF9E9E9E)),
+                style: TextStyle(
+                  fontSize: isMobile ? 14 : 16,
+                  color: const Color(0xFF9E9E9E),
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: isMobile ? 12 : 16),
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
@@ -492,9 +506,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 16 : 20,
+                        vertical: isMobile ? 12 : 16,
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
@@ -505,7 +519,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       child: Text(
                         '${minutes}m',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: isMobile ? 16 : 18,
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? const Color(0xFF1A1A1A)

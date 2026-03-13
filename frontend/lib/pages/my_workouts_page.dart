@@ -382,27 +382,21 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
                               // Exercise Grid
                               LayoutBuilder(
                                 builder: (context, constraints) {
+                                  final isMobile = Responsive.isMobile(context);
+                                  final spacing = 16.0;
                                   final count = Responsive.gridCount(
                                     constraints.maxWidth,
-                                    minTileWidth: 220,
+                                    minTileWidth: isMobile ? 180 : 220,
                                     maxCount: 3,
                                   );
-                                  final aspect = count == 1 ? 0.9 : 1.18;
-                                  return GridView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: count,
-                                          crossAxisSpacing: 16,
-                                          mainAxisSpacing: 16,
-                                          childAspectRatio: aspect,
-                                        ),
-                                    itemCount: _availableExercises.length,
-                                    itemBuilder: (context, index) {
-                                      final exercise =
-                                          _availableExercises[index];
+                                  final totalSpacing = spacing * (count - 1);
+                                  final cardWidth =
+                                      (constraints.maxWidth - totalSpacing) /
+                                          count;
+                                  return Wrap(
+                                    spacing: spacing,
+                                    runSpacing: spacing,
+                                    children: _availableExercises.map((exercise) {
                                       // Support both MongoDB's _id and legacy id
                                       final exerciseId =
                                           (exercise['_id'] ?? exercise['id'])
@@ -434,88 +428,102 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
                                         }
                                       }
 
-                                      return InkWell(
-                                        onTap: () {
-                                          setModalState(() {
-                                            _toggleExerciseSelection(exercise);
-                                          });
-                                        },
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF0F0F0F),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: isSelected
-                                                  ? const Color(0xFFB4F405)
-                                                  : const Color(0xFF2A2A2A),
-                                              width: isSelected ? 2.5 : 1,
+                                      return SizedBox(
+                                        width: cardWidth,
+                                        child: InkWell(
+                                          onTap: () {
+                                            setModalState(() {
+                                              _toggleExerciseSelection(
+                                                exercise,
+                                              );
+                                            });
+                                          },
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF0F0F0F),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: isSelected
+                                                    ? const Color(0xFFB4F405)
+                                                    : const Color(0xFF2A2A2A),
+                                                width: isSelected ? 2.5 : 1,
+                                              ),
                                             ),
-                                          ),
-                                          child: Stack(
-                                            children: [
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  // Thumbnail
-                                                  Container(
-                                                    height: 160,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(
-                                                        0xFF2A2A2A,
-                                                      ),
-                                                      borderRadius:
-                                                          const BorderRadius.only(
-                                                            topLeft: Radius
-                                                                .circular(12),
-                                                            topRight: Radius
-                                                                .circular(12),
+                                            child: Stack(
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Thumbnail
+                                                    AspectRatio(
+                                                      aspectRatio: 16 / 9,
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(
+                                                            0xFF2A2A2A,
                                                           ),
-                                                      image: thumbnailUrl !=
-                                                              null
-                                                          ? DecorationImage(
-                                                              image:
-                                                                  NetworkImage(
-                                                                thumbnailUrl,
+                                                          borderRadius:
+                                                              const BorderRadius.only(
+                                                                topLeft:
+                                                                    Radius
+                                                                        .circular(
+                                                                  12,
+                                                                ),
+                                                                topRight:
+                                                                    Radius
+                                                                        .circular(
+                                                                  12,
+                                                                ),
                                                               ),
-                                                              fit: BoxFit.cover,
-                                                            )
-                                                          : null,
+                                                          image:
+                                                              thumbnailUrl !=
+                                                                      null
+                                                                  ? DecorationImage(
+                                                                      image:
+                                                                          NetworkImage(
+                                                                        thumbnailUrl,
+                                                                      ),
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                    )
+                                                                  : null,
+                                                        ),
+                                                        child:
+                                                            thumbnailUrl == null
+                                                                ? Center(
+                                                                    child: Icon(
+                                                                      Icons
+                                                                          .fitness_center,
+                                                                      size: 48,
+                                                                      color: Colors
+                                                                          .grey[600],
+                                                                    ),
+                                                                  )
+                                                                : null,
+                                                      ),
                                                     ),
-                                                    child: thumbnailUrl == null
-                                                        ? Center(
-                                                            child: Icon(
-                                                              Icons
-                                                                  .fitness_center,
-                                                              size: 48,
-                                                              color: Colors
-                                                                  .grey[600],
-                                                            ),
-                                                          )
-                                                        : null,
-                                                  ),
-                                                  // Info
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                      16,
-                                                    ),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        SizedBox(
-                                                          height: 22,
-                                                          child: Text(
+                                                    // Info
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                        12,
+                                                      ),
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
                                                             exercise['title']
                                                                     ?.toString() ??
                                                                 'Exercise',
                                                             style:
                                                                 const TextStyle(
-                                                              fontSize: 18,
+                                                              fontSize: 16,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w600,
@@ -527,19 +535,16 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
                                                                 TextOverflow
                                                                     .ellipsis,
                                                           ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 4,
-                                                        ),
-                                                        SizedBox(
-                                                          height: 36,
-                                                          child: Text(
+                                                          const SizedBox(
+                                                            height: 4,
+                                                          ),
+                                                          Text(
                                                             exercise['description']
                                                                     ?.toString() ??
                                                                 '',
                                                             style:
                                                                 const TextStyle(
-                                                              fontSize: 13,
+                                                              fontSize: 12,
                                                               color: Color(
                                                                 0xFF9E9E9E,
                                                               ),
@@ -549,46 +554,48 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
                                                                 TextOverflow
                                                                     .ellipsis,
                                                           ),
-                                                        ),
-                                                      ],
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                              if (isSelected)
-                                                Positioned(
-                                                  top: 12,
-                                                  right: 12,
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                      8,
-                                                    ),
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                      color: Color(0xFFB4F405),
-                                                      shape: BoxShape.circle,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.black26,
-                                                          blurRadius: 8,
-                                                          offset: Offset(0, 2),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.check,
-                                                      size: 24,
-                                                      color:
-                                                          Color(0xFF1A1A1A),
-                                                    ),
-                                                  ),
+                                                  ],
                                                 ),
-                                            ],
+                                                if (isSelected)
+                                                  Positioned(
+                                                    top: 12,
+                                                    right: 12,
+                                                    child: Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                        8,
+                                                      ),
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                        color:
+                                                            Color(0xFFB4F405),
+                                                        shape: BoxShape.circle,
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: Colors.black26,
+                                                            blurRadius: 8,
+                                                            offset:
+                                                                Offset(0, 2),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.check,
+                                                        size: 24,
+                                                        color:
+                                                            Color(0xFF1A1A1A),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       );
-                                    },
+                                    }).toList(),
                                   );
                                 },
                               ),

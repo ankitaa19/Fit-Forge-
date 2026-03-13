@@ -324,39 +324,50 @@ class _DashboardPageState extends State<DashboardPage> {
                         // Stats Grid
                         LayoutBuilder(
                           builder: (context, constraints) {
+                            final spacing = 16.0;
                             final count = Responsive.gridCount(
                               constraints.maxWidth,
                               minTileWidth: 180,
                               maxCount: 4,
                             );
-                            final aspect = isMobile ? 2.2 : 2.8;
-                            return GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: count,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: aspect,
+                            final totalSpacing = spacing * (count - 1);
+                            final cardWidth =
+                                (constraints.maxWidth - totalSpacing) / count;
+                            return Wrap(
+                              spacing: spacing,
+                              runSpacing: spacing,
                               children: [
-                                _buildStatCard(
-                                  icon: Icons.local_fire_department,
-                                  label: 'Streak',
-                                  value: '$streak days',
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    icon: Icons.local_fire_department,
+                                    label: 'Streak',
+                                    value: '$streak days',
+                                  ),
                                 ),
-                                _buildStatCard(
-                                  icon: Icons.emoji_events,
-                                  label: 'Exercises Done',
-                                  value: '$exercisesDone',
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    icon: Icons.emoji_events,
+                                    label: 'Exercises Done',
+                                    value: '$exercisesDone',
+                                  ),
                                 ),
-                                _buildStatCard(
-                                  icon: Icons.timer_outlined,
-                                  label: 'Total Minutes',
-                                  value: '$totalMinutes',
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    icon: Icons.timer_outlined,
+                                    label: 'Total Minutes',
+                                    value: '$totalMinutes',
+                                  ),
                                 ),
-                                _buildStatCard(
-                                  icon: Icons.trending_up,
-                                  label: 'Goal Progress',
-                                  value: '$goalProgress%',
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    icon: Icons.trending_up,
+                                    label: 'Goal Progress',
+                                    value: '$goalProgress%',
+                                  ),
                                 ),
                               ],
                             );
