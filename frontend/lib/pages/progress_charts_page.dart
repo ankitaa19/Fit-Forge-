@@ -59,6 +59,7 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
   int _weeklyMinutesTotal = 0;
   int _monthlyExercises = 0;
   int _monthlyMinutes = 0;
+  Map<String, dynamic>? _chartData;
 
   @override
   void initState() {
@@ -95,6 +96,7 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
               _parseInt(safeProgressData['totalExercises']);
           final overallMinutes = _parseInt(safeProgressData['totalMinutes']);
           final overallWorkouts = _parseInt(safeProgressData['totalWorkouts']);
+          _chartData = safeProgressData['chartData'] as Map<String, dynamic>?;
 
           // Get current fitness goal
           final fitnessGoal =
@@ -163,6 +165,16 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
   }
 
   void _updateWeeklyExercisesData() {
+    final backendSeries = _getWeeklySeriesFromBackend(
+      _chartData,
+      _exercisesTimePeriod,
+      isExercises: true,
+    );
+    if (backendSeries != null) {
+      _weeklyExercises = backendSeries;
+      return;
+    }
+
     // Reset weekly data
     _weeklyExercises = {
       'Mon': 0,
@@ -205,6 +217,16 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
   }
 
   void _updateWeeklyMinutesData() {
+    final backendSeries = _getWeeklySeriesFromBackend(
+      _chartData,
+      _minutesTimePeriod,
+      isExercises: false,
+    );
+    if (backendSeries != null) {
+      _weeklyMinutes = backendSeries;
+      return;
+    }
+
     // Reset weekly data
     _weeklyMinutes = {
       'Mon': 0,
@@ -245,6 +267,15 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
   }
 
   void _updateMonthlyOverviewData() {
+    final backendOverview = _getMonthlyOverviewFromBackend(
+      _chartData,
+      _overviewTimePeriod,
+    );
+    if (backendOverview != null) {
+      _monthlyOverview = backendOverview;
+      return;
+    }
+
     // Reset monthly data
     _monthlyOverview = {
       'Week 1': {'exercises': 0, 'minutes': 0},
@@ -301,6 +332,84 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
     if (value is double) return value.round();
     if (value is num) return value.toInt();
     return 0;
+  }
+
+  Map<String, int>? _getWeeklySeriesFromBackend(
+    Map<String, dynamic>? chartData,
+    String timePeriod, {
+    required bool isExercises,
+  }) {
+    if (chartData == null) return null;
+    final key = isExercises ? 'weeklyExercises' : 'weeklyMinutes';
+    final seriesMap = chartData[key] as Map<String, dynamic>?;
+    if (seriesMap == null) return null;
+
+    String? periodKey;
+    if (timePeriod == 'This Week') {
+      periodKey = 'thisWeek';
+    } else if (timePeriod == 'Last Week') {
+      periodKey = 'lastWeek';
+    } else if (timePeriod == 'Last 4 Weeks') {
+      periodKey = 'last4Weeks';
+    } else if (timePeriod == 'Last 30 Days') {
+      periodKey = 'last30Days';
+    }
+
+    if (periodKey == null) return null;
+    final rawSeries = seriesMap[periodKey] as Map<String, dynamic>?;
+    if (rawSeries == null) return null;
+
+    return _normalizeWeekSeries(rawSeries);
+  }
+
+  Map<String, Map<String, int>>? _getMonthlyOverviewFromBackend(
+    Map<String, dynamic>? chartData,
+    String timePeriod,
+  ) {
+    if (chartData == null) return null;
+    final overviewMap = chartData['monthlyOverview'] as Map<String, dynamic>?;
+    if (overviewMap == null) return null;
+
+    String? periodKey;
+    if (timePeriod == 'Current Month') {
+      periodKey = 'currentMonth';
+    } else if (timePeriod == 'Last 3 Months') {
+      periodKey = 'last3Months';
+    } else if (timePeriod == 'Last 6 Months') {
+      periodKey = 'last6Months';
+    } else if (timePeriod == 'Last 12 Months') {
+      periodKey = 'last12Months';
+    }
+
+    if (periodKey == null) return null;
+    final rawOverview = overviewMap[periodKey] as Map<String, dynamic>?;
+    if (rawOverview == null) return null;
+
+    return _normalizeMonthSeries(rawOverview);
+  }
+
+  Map<String, int> _normalizeWeekSeries(Map<String, dynamic> rawSeries) {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final series = <String, int>{};
+    for (final day in days) {
+      series[day] = _parseInt(rawSeries[day]);
+    }
+    return series;
+  }
+
+  Map<String, Map<String, int>> _normalizeMonthSeries(
+    Map<String, dynamic> rawOverview,
+  ) {
+    final weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+    final overview = <String, Map<String, int>>{};
+    for (final week in weeks) {
+      final rawWeek = rawOverview[week] as Map<String, dynamic>?;
+      overview[week] = {
+        'exercises': _parseInt(rawWeek?['exercises']),
+        'minutes': _parseInt(rawWeek?['minutes']),
+      };
+    }
+    return overview;
   }
 
   @override
