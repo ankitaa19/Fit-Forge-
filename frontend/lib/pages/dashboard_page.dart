@@ -4,6 +4,7 @@ import '../widgets/workout_session_modal.dart';
 import '../services/progress_service.dart';
 import '../services/dashboard_service.dart';
 import '../utils/motivational_quotes.dart';
+import '../utils/responsive.dart';
 
 class DashboardPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -116,6 +117,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isNarrow = Responsive.isNarrow(context);
+    final isMobile = Responsive.isMobile(context);
+    final pagePadding = Responsive.pagePadding(context);
+
     // Safely handle user data with extra defensive checks
     String userName = 'User';
     try {
@@ -164,70 +169,97 @@ class _DashboardPageState extends State<DashboardPage> {
     final weeklyWorkouts = totalWorkouts > 0 ? (totalWorkouts / 4).ceil() : 0;
     final weeklyMinutes = totalMinutes > 0 ? (totalMinutes / 4).ceil() : 0;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Row(
-        children: [
-          // Sidebar
-          Sidebar(currentPage: 'dashboard', user: widget.user),
-
-          // Main Content
-          Expanded(
-            child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Hey, $firstName 👋',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Goal: $fitnessGoal',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall?.color,
-                                  ),
-                                ),
-                              ],
+    final mainContent = _isLoading
+        ? Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
+          )
+        : SingleChildScrollView(
+            padding: pagePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hey, $firstName 👋',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.stars_rounded,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                size: 28,
-                              ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Goal: $fitnessGoal',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color:
+                                  Theme.of(context).textTheme.bodySmall?.color,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.stars_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 28,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hey, $firstName 👋',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Goal: $fitnessGoal',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.stars_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 28,
+                            ),
+                          ),
+                        ],
+                      ),
+                SizedBox(height: isMobile ? 20 : 32),
 
                         // Quote Box
                         Container(
@@ -290,40 +322,45 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 32),
 
                         // Stats Grid
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                icon: Icons.local_fire_department,
-                                label: 'Streak',
-                                value: '$streak days',
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildStatCard(
-                                icon: Icons.emoji_events,
-                                label: 'Exercises Done',
-                                value: '$exercisesDone',
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildStatCard(
-                                icon: Icons.timer_outlined,
-                                label: 'Total Minutes',
-                                value: '$totalMinutes',
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildStatCard(
-                                icon: Icons.trending_up,
-                                label: 'Goal Progress',
-                                value: '$goalProgress%',
-                              ),
-                            ),
-                          ],
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final count = Responsive.gridCount(
+                              constraints.maxWidth,
+                              minTileWidth: 180,
+                              maxCount: 4,
+                            );
+                            final aspect = isMobile ? 2.2 : 2.8;
+                            return GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: count,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: aspect,
+                              children: [
+                                _buildStatCard(
+                                  icon: Icons.local_fire_department,
+                                  label: 'Streak',
+                                  value: '$streak days',
+                                ),
+                                _buildStatCard(
+                                  icon: Icons.emoji_events,
+                                  label: 'Exercises Done',
+                                  value: '$exercisesDone',
+                                ),
+                                _buildStatCard(
+                                  icon: Icons.timer_outlined,
+                                  label: 'Total Minutes',
+                                  value: '$totalMinutes',
+                                ),
+                                _buildStatCard(
+                                  icon: Icons.trending_up,
+                                  label: 'Goal Progress',
+                                  value: '$goalProgress%',
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 32),
 
@@ -431,85 +468,168 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ],
                               ),
                               const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildWeeklyStat(
-                                      icon: Icons.fitness_center,
-                                      value: '$weeklyWorkouts',
-                                      label: 'Workouts this week',
-                                      subLabel: weeklyWorkouts > 0
-                                          ? '🔥 Keep it up!'
-                                          : '— Let\'s get started!',
+                              isMobile
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        _buildWeeklyStat(
+                                          icon: Icons.fitness_center,
+                                          value: '$weeklyWorkouts',
+                                          label: 'Workouts this week',
+                                          subLabel: weeklyWorkouts > 0
+                                              ? '🔥 Keep it up!'
+                                              : '— Let\'s get started!',
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _buildWeeklyStat(
+                                          icon: Icons.timer,
+                                          value: '$weeklyMinutes',
+                                          label: 'Minutes this week',
+                                          subLabel: weeklyMinutes > 0
+                                              ? '💪 Great progress!'
+                                              : '— Time to begin!',
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildWeeklyStat(
+                                            icon: Icons.fitness_center,
+                                            value: '$weeklyWorkouts',
+                                            label: 'Workouts this week',
+                                            subLabel: weeklyWorkouts > 0
+                                                ? '🔥 Keep it up!'
+                                                : '— Let\'s get started!',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 24),
+                                        Expanded(
+                                          child: _buildWeeklyStat(
+                                            icon: Icons.timer,
+                                            value: '$weeklyMinutes',
+                                            label: 'Minutes this week',
+                                            subLabel: weeklyMinutes > 0
+                                                ? '💪 Great progress!'
+                                                : '— Time to begin!',
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  Expanded(
-                                    child: _buildWeeklyStat(
-                                      icon: Icons.timer,
-                                      value: '$weeklyMinutes',
-                                      label: 'Minutes this week',
-                                      subLabel: weeklyMinutes > 0
-                                          ? '💪 Great progress!'
-                                          : '— Time to begin!',
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 32),
 
                         // Today's Workout
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Today\'s Workout',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () => _startWorkoutSession(0),
-                              icon: const Icon(Icons.play_arrow, size: 20),
-                              label: const Text('Start Session'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).primaryColor,
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).scaffoldBackgroundColor,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          height: 300,
-                          child: Row(
-                            children: _dashboardVideos.asMap().entries.map((
-                              entry,
-                            ) {
-                              final index = entry.key;
-                              final video = entry.value;
-                              return Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    right: index < _dashboardVideos.length - 1
-                                        ? 16
-                                        : 0,
+                        isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Today\'s Workout',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _startWorkoutSession(0),
+                                      icon: const Icon(
+                                        Icons.play_arrow,
+                                        size: 20,
+                                      ),
+                                      label: const Text('Start Session'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Theme.of(context).primaryColor,
+                                        foregroundColor: Theme.of(
+                                          context,
+                                        ).scaffoldBackgroundColor,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Today\'s Workout',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _startWorkoutSession(0),
+                                    icon: const Icon(
+                                      Icons.play_arrow,
+                                      size: 20,
+                                    ),
+                                    label: const Text('Start Session'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).primaryColor,
+                                      foregroundColor: Theme.of(
+                                        context,
+                                      ).scaffoldBackgroundColor,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        const SizedBox(height: 20),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final spacing = 16.0;
+                            final columns = Responsive.gridCount(
+                              constraints.maxWidth,
+                              minTileWidth: 280,
+                              maxCount: 3,
+                            );
+                            final totalSpacing = spacing * (columns - 1);
+                            final rawWidth =
+                                (constraints.maxWidth - totalSpacing) /
+                                    columns;
+                            final cardWidth = isMobile
+                                ? rawWidth
+                                : (rawWidth > 360.0 ? 360.0 : rawWidth);
+
+                            return Wrap(
+                              spacing: spacing,
+                              runSpacing: spacing,
+                              children: _dashboardVideos.asMap().entries.map((
+                                entry,
+                              ) {
+                                final index = entry.key;
+                                final video = entry.value;
+                                return SizedBox(
+                                  width: cardWidth,
                                   child: _buildWorkoutCard(
                                     title: video['title'] as String? ?? '',
                                     description:
@@ -531,10 +651,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                         video['caloriesBurned'] as int?,
                                     onTap: () => _startWorkoutSession(index),
                                   ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                                );
+                              }).toList(),
+                            );
+                          },
                         ),
                         const SizedBox(height: 32),
 
@@ -573,30 +693,51 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ],
                               ),
                               const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildMealCard(
-                                      'BREAKFAST',
-                                      'Oatmeal with protein powder, peanut butter, and banana',
+                              isMobile
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        _buildMealCard(
+                                          'BREAKFAST',
+                                          'Oatmeal with protein powder, peanut butter, and banana',
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _buildMealCard(
+                                          'LUNCH',
+                                          'Salmon with quinoa and roasted vegetables',
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _buildMealCard(
+                                          'DINNER',
+                                          'Ground turkey pasta with marinara sauce',
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildMealCard(
+                                            'BREAKFAST',
+                                            'Oatmeal with protein powder, peanut butter, and banana',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: _buildMealCard(
+                                            'LUNCH',
+                                            'Salmon with quinoa and roasted vegetables',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: _buildMealCard(
+                                            'DINNER',
+                                            'Ground turkey pasta with marinara sauce',
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: _buildMealCard(
-                                      'LUNCH',
-                                      'Salmon with quinoa and roasted vegetables',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: _buildMealCard(
-                                      'DINNER',
-                                      'Ground turkey pasta with marinara sauce',
-                                    ),
-                                  ),
-                                ],
-                              ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
@@ -621,10 +762,44 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ],
                     ),
-                  ),
-          ),
-        ],
-      ),
+                  );
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('Dashboard'),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              elevation: 0,
+              iconTheme: IconThemeData(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              titleTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'dashboard',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'dashboard', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
@@ -633,8 +808,9 @@ class _DashboardPageState extends State<DashboardPage> {
     required String label,
     required String value,
   }) {
+    final isMobile = Responsive.isMobile(context);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
@@ -642,22 +818,25 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 24, color: const Color(0xFFB4F405)),
-          const SizedBox(width: 12),
+          Icon(icon, size: isMobile ? 20 : 24, color: const Color(0xFFB4F405)),
+          SizedBox(width: isMobile ? 8 : 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 24,
+                style: TextStyle(
+                  fontSize: isMobile ? 20 : 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               Text(
                 label,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+                style: TextStyle(
+                  fontSize: isMobile ? 11 : 12,
+                  color: const Color(0xFF9E9E9E),
+                ),
               ),
             ],
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
 import '../services/progress_service.dart';
+import '../utils/responsive.dart';
 
 class ProgressChartsPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -53,6 +54,11 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
   String? _hoveredWeek;
   int _totalExercises = 0;
   int _totalMinutes = 0;
+  int _totalWorkouts = 0;
+  int _weeklyWorkoutsTotal = 0;
+  int _weeklyMinutesTotal = 0;
+  int _monthlyExercises = 0;
+  int _monthlyMinutes = 0;
 
   @override
   void initState() {
@@ -78,13 +84,21 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
       );
 
       if (mounted && response['success']) {
-        final progressData = response['data'];
-        final goalData = goalResponse['success'] ? goalResponse['data'] : null;
+        final progressData = response['data'] as Map<String, dynamic>?;
+        final goalData = goalResponse['success']
+            ? goalResponse['data'] as Map<String, dynamic>?
+            : null;
 
         setState(() {
+          final safeProgressData = progressData ?? <String, dynamic>{};
+          final overallExercises =
+              _parseInt(safeProgressData['totalExercises']);
+          final overallMinutes = _parseInt(safeProgressData['totalMinutes']);
+          final overallWorkouts = _parseInt(safeProgressData['totalWorkouts']);
+
           // Get current fitness goal
           final fitnessGoal =
-              progressData['fitnessGoal'] as String? ?? 'General Fitness';
+              safeProgressData['fitnessGoal'] as String? ?? 'General Fitness';
           _currentFitnessGoal = fitnessGoal;
 
           // Get goal-specific progress
@@ -94,18 +108,43 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
             final currentGoalProgress =
                 goalProgressMap?[fitnessGoal] as Map<String, dynamic>?;
 
-            _totalExercises =
-                currentGoalProgress?['exercises'] ??
-                progressData['totalExercises'] ??
-                0;
+            final goalExercises = currentGoalProgress?['exercises'];
+            final goalMinutes = currentGoalProgress?['minutes'];
+            final goalWorkouts = currentGoalProgress?['workouts'];
+
+            _totalExercises = goalExercises == null
+                ? overallExercises
+                : _parseInt(goalExercises);
             _totalMinutes =
-                currentGoalProgress?['minutes'] ??
-                progressData['totalMinutes'] ??
-                0;
+                goalMinutes == null ? overallMinutes : _parseInt(goalMinutes);
+            _totalWorkouts =
+                goalWorkouts == null ? overallWorkouts : _parseInt(goalWorkouts);
           } else {
-            _totalExercises = progressData['totalExercises'] ?? 0;
-            _totalMinutes = progressData['totalMinutes'] ?? 0;
+            _totalExercises = overallExercises;
+            _totalMinutes = overallMinutes;
+            _totalWorkouts = overallWorkouts;
           }
+
+          final weeklyStats =
+              safeProgressData['weeklyStats'] as Map<String, dynamic>?;
+          final monthlyStats =
+              safeProgressData['monthlyStats'] as Map<String, dynamic>?;
+
+          final workoutsRatio =
+              overallWorkouts > 0 ? _totalWorkouts / overallWorkouts : 1.0;
+          final minutesRatio =
+              overallMinutes > 0 ? _totalMinutes / overallMinutes : 1.0;
+          final exercisesRatio =
+              overallExercises > 0 ? _totalExercises / overallExercises : 1.0;
+
+          _weeklyWorkoutsTotal =
+              (_parseInt(weeklyStats?['workouts']) * workoutsRatio).round();
+          _weeklyMinutesTotal =
+              (_parseInt(weeklyStats?['minutes']) * minutesRatio).round();
+          _monthlyExercises =
+              (_parseInt(monthlyStats?['exercises']) * exercisesRatio).round();
+          _monthlyMinutes =
+              (_parseInt(monthlyStats?['minutes']) * minutesRatio).round();
 
           // Update charts with current filter selections
           _updateWeeklyExercisesData();
@@ -135,15 +174,22 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
       'Sun': 0,
     };
 
-    int exercisesForPeriod = _totalExercises;
+    final exercisesPerWorkout =
+        _totalWorkouts > 0 ? _totalExercises / _totalWorkouts : 0.0;
+    final weeklyExercisesTotal = _weeklyWorkoutsTotal > 0
+        ? (_weeklyWorkoutsTotal * exercisesPerWorkout).round()
+        : (_totalExercises > 0 ? (_totalExercises / 4).round() : 0);
+    int exercisesForPeriod = weeklyExercisesTotal;
 
     // Adjust based on selected time period
     if (_exercisesTimePeriod == 'Last Week') {
       // Simulate 70% of current week for last week
-      exercisesForPeriod = (_totalExercises * 0.7).floor();
+      exercisesForPeriod = (weeklyExercisesTotal * 0.7).floor();
     } else if (_exercisesTimePeriod == 'Last 4 Weeks') {
-      // Use full total which represents the month
-      exercisesForPeriod = _totalExercises;
+      // Use monthly average when available
+      exercisesForPeriod = _monthlyExercises > 0
+          ? (_monthlyExercises / 4).floor()
+          : weeklyExercisesTotal;
     }
 
     if (exercisesForPeriod > 0) {
@@ -170,15 +216,20 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
       'Sun': 0,
     };
 
-    int minutesForPeriod = _totalMinutes;
+    final weeklyMinutesTotal = _weeklyMinutesTotal > 0
+        ? _weeklyMinutesTotal
+        : (_totalMinutes > 0 ? (_totalMinutes / 4).round() : 0);
+    int minutesForPeriod = weeklyMinutesTotal;
 
     // Adjust based on selected time period
     if (_minutesTimePeriod == 'Last Week') {
       // Simulate 70% of current week for last week
-      minutesForPeriod = (_totalMinutes * 0.7).floor();
+      minutesForPeriod = (weeklyMinutesTotal * 0.7).floor();
     } else if (_minutesTimePeriod == 'Last 30 Days') {
-      // Use full total which represents the month
-      minutesForPeriod = _totalMinutes;
+      // Use monthly average when available
+      minutesForPeriod = _monthlyMinutes > 0
+          ? (_monthlyMinutes / 4).floor()
+          : weeklyMinutesTotal;
     }
 
     if (minutesForPeriod > 0) {
@@ -202,176 +253,233 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
       'Week 4': {'exercises': 0, 'minutes': 0},
     };
 
-    int exercisesForPeriod = _totalExercises;
-    int minutesForPeriod = _totalMinutes;
+    final baseExercises =
+        _monthlyExercises > 0 ? _monthlyExercises : _totalExercises;
+    final baseMinutes = _monthlyMinutes > 0 ? _monthlyMinutes : _totalMinutes;
+    int exercisesForPeriod = baseExercises;
+    int minutesForPeriod = baseMinutes;
     int weeksToShow = 4;
 
     // Adjust based on selected time period
     if (_overviewTimePeriod == 'Last 3 Months') {
-      exercisesForPeriod = (_totalExercises * 1.2).floor();
-      minutesForPeriod = (_totalMinutes * 1.2).floor();
+      exercisesForPeriod = (baseExercises * 1.2).floor();
+      minutesForPeriod = (baseMinutes * 1.2).floor();
       weeksToShow = 12;
     } else if (_overviewTimePeriod == 'Last 6 Months') {
-      exercisesForPeriod = (_totalExercises * 1.5).floor();
-      minutesForPeriod = (_totalMinutes * 1.5).floor();
+      exercisesForPeriod = (baseExercises * 1.5).floor();
+      minutesForPeriod = (baseMinutes * 1.5).floor();
       weeksToShow = 24;
     } else if (_overviewTimePeriod == 'Last 12 Months') {
-      exercisesForPeriod = (_totalExercises * 2).floor();
-      minutesForPeriod = (_totalMinutes * 2).floor();
+      exercisesForPeriod = (baseExercises * 2).floor();
+      minutesForPeriod = (baseMinutes * 2).floor();
       weeksToShow = 52;
     }
 
-    if (exercisesForPeriod > 0 && minutesForPeriod > 0) {
-      final avgExercisesPerWeek = (exercisesForPeriod / weeksToShow).floor();
-      final avgMinutesPerWeek = (minutesForPeriod / weeksToShow).floor();
+    if (exercisesForPeriod > 0 || minutesForPeriod > 0) {
+      final safeWeeks = weeksToShow > 0 ? weeksToShow : 4;
+      final exercisesBase = (exercisesForPeriod / safeWeeks).floor();
+      final minutesBase = (minutesForPeriod / safeWeeks).floor();
+      final exercisesRemainder = safeWeeks > 0
+          ? (exercisesForPeriod % safeWeeks)
+          : 0;
+      final minutesRemainder =
+          safeWeeks > 0 ? (minutesForPeriod % safeWeeks) : 0;
 
-      // For current month view, show 4 weeks
-      if (_overviewTimePeriod == 'Current Month') {
-        for (var i = 1; i <= 4; i++) {
-          _monthlyOverview['Week $i'] = {
-            'exercises': avgExercisesPerWeek,
-            'minutes': avgMinutesPerWeek,
-          };
-        }
-      } else {
-        // For other periods, simulate week progression
-        for (var i = 1; i <= 4; i++) {
-          _monthlyOverview['Week $i'] = {
-            'exercises': avgExercisesPerWeek,
-            'minutes': avgMinutesPerWeek,
-          };
-        }
+      for (var i = 1; i <= 4; i++) {
+        final extraExercises = i <= exercisesRemainder ? 1 : 0;
+        final extraMinutes = i <= minutesRemainder ? 1 : 0;
+        _monthlyOverview['Week $i'] = {
+          'exercises': exercisesBase + extraExercises,
+          'minutes': minutesBase + extraMinutes,
+        };
       }
     }
   }
 
+  int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is num) return value.toInt();
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
+    final isNarrow = Responsive.isNarrow(context);
+    final isMobile = Responsive.isMobile(context);
+    final pagePadding = Responsive.pagePadding(context);
+
+    final statsBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFB4F405).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFB4F405).withOpacity(0.3),
+        ),
+      ),
+      child: Row(
         children: [
-          Sidebar(currentPage: 'progress', user: widget.user),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFB4F405)),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Progress Charts',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Visualize your fitness journey for $_currentFitnessGoal',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[400],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // Stats Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFB4F405).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFFB4F405,
-                                  ).withOpacity(0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.fitness_center,
-                                    color: Color(0xFFB4F405),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '$_totalExercises Exercises • $_totalMinutes Min',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFFB4F405),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 40),
-
-                        // Weekly Exercises Chart
-                        _buildChartCard(
-                          title: 'Weekly Exercises',
-                          timePeriod: _exercisesTimePeriod,
-                          onTimePeriodChanged: (value) {
-                            setState(() {
-                              _exercisesTimePeriod = value;
-                              _updateWeeklyExercisesData();
-                            });
-                          },
-                          child: _buildWeeklyExercisesChart(),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Weekly Minutes Chart
-                        _buildChartCard(
-                          title: 'Weekly Minutes',
-                          timePeriod: _minutesTimePeriod,
-                          onTimePeriodChanged: (value) {
-                            setState(() {
-                              _minutesTimePeriod = value;
-                              _updateWeeklyMinutesData();
-                            });
-                          },
-                          child: _buildWeeklyMinutesChart(),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Monthly Overview Chart
-                        _buildChartCard(
-                          title: 'Monthly Overview',
-                          timePeriod: _overviewTimePeriod,
-                          onTimePeriodChanged: (value) {
-                            setState(() {
-                              _overviewTimePeriod = value;
-                              _updateMonthlyOverviewData();
-                            });
-                          },
-                          child: _buildMonthlyOverviewChart(),
-                        ),
-                      ],
-                    ),
-                  ),
+          const Icon(
+            Icons.fitness_center,
+            color: Color(0xFFB4F405),
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$_totalExercises Exercises • $_totalMinutes Min',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFFB4F405),
+            ),
           ),
         ],
       ),
+    );
+
+    final mainContent = _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB4F405)),
+          )
+        : SingleChildScrollView(
+            padding: pagePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Progress Charts',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Visualize your fitness journey for $_currentFitnessGoal',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          statsBadge,
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Progress Charts',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Visualize your fitness journey for $_currentFitnessGoal',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                          statsBadge,
+                        ],
+                      ),
+                SizedBox(height: isMobile ? 24 : 40),
+
+                // Weekly Exercises Chart
+                _buildChartCard(
+                  title: 'Weekly Exercises',
+                  timePeriod: _exercisesTimePeriod,
+                  onTimePeriodChanged: (value) {
+                    setState(() {
+                      _exercisesTimePeriod = value;
+                      _updateWeeklyExercisesData();
+                    });
+                  },
+                  child: _buildWeeklyExercisesChart(),
+                ),
+                const SizedBox(height: 24),
+
+                // Weekly Minutes Chart
+                _buildChartCard(
+                  title: 'Weekly Minutes',
+                  timePeriod: _minutesTimePeriod,
+                  onTimePeriodChanged: (value) {
+                    setState(() {
+                      _minutesTimePeriod = value;
+                      _updateWeeklyMinutesData();
+                    });
+                  },
+                  child: _buildWeeklyMinutesChart(),
+                ),
+                const SizedBox(height: 24),
+
+                // Monthly Overview Chart
+                _buildChartCard(
+                  title: 'Monthly Overview',
+                  timePeriod: _overviewTimePeriod,
+                  onTimePeriodChanged: (value) {
+                    setState(() {
+                      _overviewTimePeriod = value;
+                      _updateMonthlyOverviewData();
+                    });
+                  },
+                  child: _buildMonthlyOverviewChart(),
+                ),
+              ],
+            ),
+          );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('Progress'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'progress',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'progress', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
@@ -381,8 +489,21 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
     String? timePeriod,
     Function(String)? onTimePeriodChanged,
   }) {
+    final isNarrow = Responsive.isNarrow(context);
+    final content = isNarrow
+        ? SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width > 520
+                  ? MediaQuery.of(context).size.width - 32
+                  : 520,
+              child: child,
+            ),
+          )
+        : child;
+
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(isNarrow ? 20 : 32),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
@@ -410,8 +531,8 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 32),
-          child,
+          SizedBox(height: isNarrow ? 24 : 32),
+          content,
         ],
       ),
     );
@@ -722,134 +843,190 @@ class _ProgressChartsPageState extends State<ProgressChartsPage> {
   }
 
   Widget _buildMonthlyOverviewChart() {
-    final maxValue = _monthlyOverview.values.fold<int>(
-      0,
-      (max, week) => week['exercises']! > max ? week['exercises']! : max,
-    );
+    final maxValue = _monthlyOverview.values.fold<int>(0, (max, week) {
+      final exercises = week['exercises'] ?? 0;
+      final minutes = week['minutes'] ?? 0;
+      final localMax = exercises > minutes ? exercises : minutes;
+      return localMax > max ? localMax : max;
+    });
     final chartMax = maxValue > 0 ? maxValue + 1 : 4;
 
-    return SizedBox(
-      height: 320,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // Y-axis labels
-          SizedBox(
-            width: 40,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(5, (index) {
-                final value = chartMax - (chartMax / 4 * index).round();
-                return Text(
-                  value.toString(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6E6E6E),
-                  ),
-                );
-              }),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: const [
+            _LegendDot(color: Color(0xFFB4F405)),
+            SizedBox(width: 6),
+            Text(
+              'Exercises',
+              style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
             ),
-          ),
-          const SizedBox(width: 16),
+            SizedBox(width: 16),
+            _LegendDot(color: Color(0xFF4DA3FF)),
+            SizedBox(width: 6),
+            Text(
+              'Minutes',
+              style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 320,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Y-axis labels
+              SizedBox(
+                width: 40,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(5, (index) {
+                    final value = chartMax - (chartMax / 4 * index).round();
+                    return Text(
+                      value.toString(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6E6E6E),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(width: 16),
 
-          // Chart bars (grouped)
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _monthlyOverview.entries.map((entry) {
-                final exercises = entry.value['exercises']!;
-                final minutes = entry.value['minutes']!;
-                final height = chartMax > 0
-                    ? (exercises / chartMax * 260)
-                    : 0.0;
-                final isHovered = _hoveredWeek == entry.key;
+              // Chart bars (grouped)
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: _monthlyOverview.entries.map((entry) {
+                    final exercises = entry.value['exercises'] ?? 0;
+                    final minutes = entry.value['minutes'] ?? 0;
+                    final exercisesHeight = exercises > 0
+                        ? (exercises / chartMax * 260)
+                        : 0.0;
+                    final minutesHeight = minutes > 0
+                        ? (minutes / chartMax * 260)
+                        : 0.0;
+                    final isHovered = _hoveredWeek == entry.key;
 
-                return Expanded(
-                  child: MouseRegion(
-                    onEnter: (_) => setState(() => _hoveredWeek = entry.key),
-                    onExit: (_) => setState(() => _hoveredWeek = null),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Tooltip
-                        if (isHovered)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2A2A2A),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
+                    return Expanded(
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => _hoveredWeek = entry.key),
+                        onExit: (_) => setState(() => _hoveredWeek = null),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Tooltip
+                            if (isHovered)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2A2A2A),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      entry.key,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Exercises: $exercises',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF9E9E9E),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Minutes: $minutes',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF9E9E9E),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 8),
+
+                            // Bars
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(
-                                  entry.key,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                Container(
+                                  width: 12,
+                                  height: exercisesHeight > 0
+                                      ? (exercisesHeight < 2 ? 2 : exercisesHeight)
+                                      : 0,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFB4F405),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(6),
+                                    ),
                                   ),
                                 ),
-                                Text(
-                                  'Exercises: $exercises',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF9E9E9E),
-                                  ),
-                                ),
-                                Text(
-                                  'Minutes: $minutes',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF9E9E9E),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 12,
+                                  height: minutesHeight > 0
+                                      ? (minutesHeight < 2 ? 2 : minutesHeight)
+                                      : 0,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF4DA3FF),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(6),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        const SizedBox(height: 8),
+                            const SizedBox(height: 12),
 
-                        // Bar
-                        Container(
-                          width: double.infinity,
-                          height: height < 2 ? 2 : height,
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFFB4F405),
-                                const Color(0xFFB4F405).withOpacity(0.6),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
+                            // X-axis label
+                            Text(
+                              entry.key,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9E9E9E),
+                              ),
                             ),
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(6),
-                            ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-
-                        // X-axis label
-                        Text(
-                          entry.key,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF9E9E9E),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
 import '../services/diet_service.dart';
 import 'package:intl/intl.dart';
+import '../utils/responsive.dart';
 
 class DietPlanPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -88,204 +89,190 @@ class _DietPlanPageState extends State<DietPlanPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
-        children: [
-          Sidebar(currentPage: 'diet', user: widget.user),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFB4F405)),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final isNarrow = Responsive.isNarrow(context);
+    final isMobile = Responsive.isMobile(context);
+    final pagePadding = Responsive.pagePadding(context);
+
+    final header = isMobile
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Monthly Diet Plan',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '31-Day Cyclical Nutrition Plan for $_fitnessGoal',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _goToToday,
+                  icon: const Icon(Icons.today, size: 20),
+                  label: const Text('Today\'s Plan'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB4F405),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Monthly Diet Plan',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '31-Day Cyclical Nutrition Plan for $_fitnessGoal',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: _goToToday,
+                icon: const Icon(Icons.today, size: 20),
+                label: const Text('Today\'s Plan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB4F405),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          );
+
+    final mainContent = _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB4F405)),
+          )
+        : Padding(
+            padding: pagePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                header,
+                SizedBox(height: isMobile ? 20 : 32),
+
+                // Calendar + Diet Plan
+                Expanded(
+                  child: isNarrow
+                      ? SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCalendar(),
+                              const SizedBox(height: 24),
+                              _dietPlan != null
+                                  ? _buildDietPlanDetails(isMobile)
+                                  : _buildEmptyState(),
+                            ],
+                          ),
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Monthly Diet Plan',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '31-Day Cyclical Nutrition Plan for $_fitnessGoal',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF9E9E9E),
-                                  ),
-                                ),
-                              ],
+                            // Calendar - 35% width
+                            Expanded(
+                              flex: 35,
+                              child: SingleChildScrollView(
+                                child: _buildCalendar(),
+                              ),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: _goToToday,
-                              icon: const Icon(Icons.today, size: 20),
-                              label: const Text('Today\'s Plan'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFB4F405),
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                            const SizedBox(width: 24),
+
+                            // Diet Plan Content - 65% width
+                            Expanded(
+                              flex: 65,
+                              child: SingleChildScrollView(
+                                child: _dietPlan != null
+                                    ? _buildDietPlanDetails(isMobile)
+                                    : _buildEmptyState(),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 32),
+                ),
+              ],
+            ),
+          );
 
-                        // Calendar on left (35%) and Diet Plan on right (65%)
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Calendar - 35% width
-                              Expanded(
-                                flex: 35,
-                                child: SingleChildScrollView(
-                                  child: _buildCalendar(),
-                                ),
-                              ),
-                              const SizedBox(width: 24),
-
-                              // Diet Plan Content - 65% width
-                              Expanded(
-                                flex: 65,
-                                child: SingleChildScrollView(
-                                  child: _dietPlan != null
-                                      ? Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // Simple Date Header (like reference image)
-                                            Container(
-                                              padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF1A1A1A),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.apple,
-                                                    color: Color(0xFFB4F405),
-                                                    size: 24,
-                                                  ),
-                                                  const SizedBox(width: 12),
-                                                  Text(
-                                                    DateFormat(
-                                                      'EEEE, MMMM d',
-                                                    ).format(_selectedDate),
-                                                    style: const TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 24),
-
-                                            // Breakfast and Lunch side by side
-                                            IntrinsicHeight(
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Expanded(
-                                                    child: _buildSimpleMealCard(
-                                                      '🍞',
-                                                      'Breakfast',
-                                                      'breakfast',
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: _buildSimpleMealCard(
-                                                      '☀️',
-                                                      'Lunch',
-                                                      'lunch',
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 16),
-
-                                            // Dinner and Snacks side by side
-                                            IntrinsicHeight(
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Expanded(
-                                                    child: _buildSimpleMealCard(
-                                                      '🌙',
-                                                      'Dinner',
-                                                      'dinner',
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: _buildSnacksCard(),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 24),
-
-                                            // Hydration and Tip side by side
-                                            IntrinsicHeight(
-                                              child: Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Expanded(
-                                                    child:
-                                                        _buildHydrationCard(),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: _buildTipCard(),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : _buildEmptyState(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-        ],
-      ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('Diet Plan'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'diet',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'diet', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
   Widget _buildCalendar() {
+    final isMobile = Responsive.isMobile(context);
     final daysInMonth = DateTime(
       _currentMonth.year,
       _currentMonth.month + 1,
@@ -302,7 +289,7 @@ class _DietPlanPageState extends State<DietPlanPage> {
         firstDayOfMonth.weekday % 7; // 0 = Sunday, 6 = Saturday
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
@@ -336,7 +323,7 @@ class _DietPlanPageState extends State<DietPlanPage> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isMobile ? 16 : 24),
 
           // Weekday Headers
           Row(
@@ -357,17 +344,17 @@ class _DietPlanPageState extends State<DietPlanPage> {
                 )
                 .toList(),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
 
           // Calendar Grid
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               childAspectRatio: 1,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: isMobile ? 4 : 8,
+              mainAxisSpacing: isMobile ? 4 : 8,
             ),
             itemCount: firstWeekday + daysInMonth,
             itemBuilder: (context, index) {
@@ -423,8 +410,115 @@ class _DietPlanPageState extends State<DietPlanPage> {
               );
             },
           ),
-        ],
-      ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildDietPlanDetails(bool isMobile) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Simple Date Header (like reference image)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.apple,
+                color: Color(0xFFB4F405),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                DateFormat('EEEE, MMMM d').format(_selectedDate),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Breakfast and Lunch
+        isMobile
+            ? Column(
+                children: [
+                  _buildSimpleMealCard('🍞', 'Breakfast', 'breakfast'),
+                  const SizedBox(height: 16),
+                  _buildSimpleMealCard('☀️', 'Lunch', 'lunch'),
+                ],
+              )
+            : IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _buildSimpleMealCard(
+                        '🍞',
+                        'Breakfast',
+                        'breakfast',
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildSimpleMealCard('☀️', 'Lunch', 'lunch'),
+                    ),
+                  ],
+                ),
+              ),
+        const SizedBox(height: 16),
+
+        // Dinner and Snacks
+        isMobile
+            ? Column(
+                children: [
+                  _buildSimpleMealCard('🌙', 'Dinner', 'dinner'),
+                  const SizedBox(height: 16),
+                  _buildSnacksCard(),
+                ],
+              )
+            : IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _buildSimpleMealCard('🌙', 'Dinner', 'dinner'),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildSnacksCard()),
+                  ],
+                ),
+              ),
+        const SizedBox(height: 24),
+
+        // Hydration and Tip
+        isMobile
+            ? Column(
+                children: [
+                  _buildHydrationCard(),
+                  const SizedBox(height: 16),
+                  _buildTipCard(),
+                ],
+              )
+            : IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: _buildHydrationCard()),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildTipCard()),
+                  ],
+                ),
+              ),
+      ],
     );
   }
 

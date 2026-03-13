@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'onboarding_page.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -84,7 +85,7 @@ class _SignUpPageState extends State<SignUpPage> {
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: 320,
+          width: Responsive.dialogWidth(dialogCtx, 320),
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -13,8 +13,14 @@ import '../pages/login_page.dart';
 class Sidebar extends StatelessWidget {
   final String currentPage;
   final Map<String, dynamic>? user;
+  final VoidCallback? onItemSelected;
 
-  const Sidebar({super.key, required this.currentPage, this.user});
+  const Sidebar({
+    super.key,
+    required this.currentPage,
+    this.user,
+    this.onItemSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +247,10 @@ class Sidebar extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            onItemSelected?.call();
+            onTap();
+          },
           borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

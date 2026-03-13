@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/progress_service.dart';
 import 'youtube_video_player.dart';
+import '../utils/responsive.dart';
 
 class WorkoutSessionModal extends StatefulWidget {
   final List<Map<String, dynamic>> exercises;
@@ -268,6 +269,13 @@ class _WorkoutSessionModalState extends State<WorkoutSessionModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final maxWidth = Responsive.dialogWidth(context, 700);
+    final maxHeight =
+        (MediaQuery.of(context).size.height * (isMobile ? 0.9 : 0.85))
+            .clamp(0.0, 700.0)
+            .toDouble();
+
     final durationSeconds = _currentExercise['durationSeconds'] as int;
     final progress = _remainingSeconds / durationSeconds;
     final minutes = _remainingSeconds ~/ 60;
@@ -285,9 +293,9 @@ class _WorkoutSessionModalState extends State<WorkoutSessionModal> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: EdgeInsets.all(isMobile ? 12 : 20),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 700, maxHeight: 700),
+        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(20),
@@ -565,100 +573,190 @@ class _WorkoutSessionModalState extends State<WorkoutSessionModal> {
                     // Control Buttons - Previous | Pause/Start | Next
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Previous Button
-                          SizedBox(
-                            width: 140,
-                            child: OutlinedButton.icon(
-                              onPressed: _navigateToPrevious,
-                              icon: const Icon(Icons.skip_previous),
-                              label: const Text('Previous'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                      child: isMobile
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: _navigateToPrevious,
+                                  icon: const Icon(Icons.skip_previous),
+                                  label: const Text('Previous'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    side: const BorderSide(
+                                      color: Color(0xFF3A3A3A),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
                                 ),
-                                side: const BorderSide(
-                                  color: Color(0xFF3A3A3A),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  onPressed:
+                                      _isRunning ? _pauseTimer : _startTimer,
+                                  icon: Icon(
+                                    _isRunning ? Icons.pause : Icons.play_arrow,
+                                  ),
+                                  label: Text(_isRunning ? 'Pause' : 'Start'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFB4F405),
+                                    foregroundColor:
+                                        const Color(0xFF1A1A1A),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: _navigateToNext,
+                                  icon: const Icon(Icons.skip_next),
+                                  label: const Text('Next'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    side: const BorderSide(
+                                      color: Color(0xFF3A3A3A),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Previous Button
+                                SizedBox(
+                                  width: 140,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _navigateToPrevious,
+                                    icon: const Icon(Icons.skip_previous),
+                                    label: const Text('Previous'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      side: const BorderSide(
+                                        color: Color(0xFF3A3A3A),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Pause/Start Button
+                                SizedBox(
+                                  width: 140,
+                                  child: ElevatedButton.icon(
+                                    onPressed:
+                                        _isRunning ? _pauseTimer : _startTimer,
+                                    icon: Icon(
+                                      _isRunning
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                    ),
+                                    label: Text(_isRunning ? 'Pause' : 'Start'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          const Color(0xFFB4F405),
+                                      foregroundColor:
+                                          const Color(0xFF1A1A1A),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Next Button
+                                SizedBox(
+                                  width: 140,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _navigateToNext,
+                                    icon: const Icon(Icons.skip_next),
+                                    label: const Text('Next'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      side: const BorderSide(
+                                        color: Color(0xFF3A3A3A),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Pause/Start Button
-                          SizedBox(
-                            width: 140,
-                            child: ElevatedButton.icon(
-                              onPressed: _isRunning ? _pauseTimer : _startTimer,
-                              icon: Icon(
-                                _isRunning ? Icons.pause : Icons.play_arrow,
-                              ),
-                              label: Text(_isRunning ? 'Pause' : 'Start'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFB4F405),
-                                foregroundColor: const Color(0xFF1A1A1A),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Next Button
-                          SizedBox(
-                            width: 140,
-                            child: OutlinedButton.icon(
-                              onPressed: _navigateToNext,
-                              icon: const Icon(Icons.skip_next),
-                              label: const Text('Next'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                side: const BorderSide(
-                                  color: Color(0xFF3A3A3A),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                     const SizedBox(height: 24),
 
                     // Motivational Cards - WHAT, WHY, HOW (Horizontal Row)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (what.isNotEmpty)
-                            Expanded(
-                              child: _buildMotivationalCard('WHAT', what),
+                      child: isMobile
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (what.isNotEmpty)
+                                  _buildMotivationalCard('WHAT', what),
+                                if (what.isNotEmpty && why.isNotEmpty)
+                                  const SizedBox(height: 12),
+                                if (why.isNotEmpty)
+                                  _buildMotivationalCard('WHY', why),
+                                if (why.isNotEmpty && how.isNotEmpty)
+                                  const SizedBox(height: 12),
+                                if (how.isNotEmpty)
+                                  _buildMotivationalCard('HOW', how),
+                              ],
+                            )
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (what.isNotEmpty)
+                                  Expanded(
+                                    child: _buildMotivationalCard('WHAT', what),
+                                  ),
+                                if (what.isNotEmpty && why.isNotEmpty)
+                                  const SizedBox(width: 12),
+                                if (why.isNotEmpty)
+                                  Expanded(
+                                    child: _buildMotivationalCard('WHY', why),
+                                  ),
+                                if (why.isNotEmpty && how.isNotEmpty)
+                                  const SizedBox(width: 12),
+                                if (how.isNotEmpty)
+                                  Expanded(
+                                    child: _buildMotivationalCard('HOW', how),
+                                  ),
+                              ],
                             ),
-                          if (what.isNotEmpty && why.isNotEmpty)
-                            const SizedBox(width: 12),
-                          if (why.isNotEmpty)
-                            Expanded(child: _buildMotivationalCard('WHY', why)),
-                          if (why.isNotEmpty && how.isNotEmpty)
-                            const SizedBox(width: 12),
-                          if (how.isNotEmpty)
-                            Expanded(child: _buildMotivationalCard('HOW', how)),
-                        ],
-                      ),
                     ),
                     const SizedBox(height: 20),
                   ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
 import '../services/progress_service.dart';
+import '../utils/responsive.dart';
 
 class AchievementsPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -273,145 +274,196 @@ class _AchievementsPageState extends State<AchievementsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
-        children: [
-          Sidebar(currentPage: 'achievements', user: widget.user),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFB4F405)),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    final isNarrow = Responsive.isNarrow(context);
+    final pagePadding = Responsive.pagePadding(context);
+
+    final mainContent = _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB4F405)),
+          )
+        : SingleChildScrollView(
+            padding: pagePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Achievements',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '$_unlockedCount of $_totalCount unlocked',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFFB4F405),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Summary Stats
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = Responsive.isMobile(context);
+                    final spacing = 20.0;
+                    final columns = Responsive.gridCount(
+                      constraints.maxWidth,
+                      minTileWidth: 180,
+                      maxCount: 4,
+                    );
+                    final totalSpacing = spacing * (columns - 1);
+                    final rawWidth =
+                        (constraints.maxWidth - totalSpacing) / columns;
+                    final cardWidth =
+                        isMobile ? rawWidth : (rawWidth > 260 ? 260.0 : rawWidth);
+
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
                       children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Achievements',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '$_unlockedCount of $_totalCount unlocked',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFFB4F405),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                        SizedBox(
+                          width: cardWidth,
+                          child: _buildStatCard(
+                            'Exercises',
+                            _currentExercises.toString(),
+                            Icons.fitness_center,
+                          ),
                         ),
-                        const SizedBox(height: 40),
-
-                        // Summary Stats
-                        Row(
-                          children: [
-                            _buildStatCard(
-                              'Exercises',
-                              _currentExercises.toString(),
-                              Icons.fitness_center,
-                            ),
-                            const SizedBox(width: 20),
-                            _buildStatCard(
-                              'Minutes',
-                              _currentMinutes.toString(),
-                              Icons.timer,
-                            ),
-                            const SizedBox(width: 20),
-                            _buildStatCard(
-                              'Day Streak',
-                              _currentDayStreak.toString(),
-                              Icons.local_fire_department,
-                            ),
-                            const SizedBox(width: 20),
-                            _buildStatCard(
-                              'Sessions',
-                              _currentSessions.toString(),
-                              Icons.event_note,
-                            ),
-                          ],
+                        SizedBox(
+                          width: cardWidth,
+                          child: _buildStatCard(
+                            'Minutes',
+                            _currentMinutes.toString(),
+                            Icons.timer,
+                          ),
                         ),
-                        const SizedBox(height: 40),
-
-                        // Achievement Categories
-                        _buildAchievementSection(
-                          '🔥 Streak',
-                          _getAchievementsByCategory('Streak'),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _buildStatCard(
+                            'Day Streak',
+                            _currentDayStreak.toString(),
+                            Icons.local_fire_department,
+                          ),
                         ),
-                        const SizedBox(height: 32),
-                        _buildAchievementSection(
-                          '💪 Exercises',
-                          _getAchievementsByCategory('Exercises'),
-                        ),
-                        const SizedBox(height: 32),
-                        _buildAchievementSection(
-                          '⏱️ Time',
-                          _getAchievementsByCategory('Time'),
-                        ),
-                        const SizedBox(height: 32),
-                        _buildAchievementSection(
-                          '🏆 Milestones',
-                          _getAchievementsByCategory('Milestones'),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _buildStatCard(
+                            'Sessions',
+                            _currentSessions.toString(),
+                            Icons.event_note,
+                          ),
                         ),
                       ],
-                    ),
-                  ),
-          ),
-        ],
-      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // Achievement Categories
+                _buildAchievementSection(
+                  '🔥 Streak',
+                  _getAchievementsByCategory('Streak'),
+                ),
+                const SizedBox(height: 32),
+                _buildAchievementSection(
+                  '💪 Exercises',
+                  _getAchievementsByCategory('Exercises'),
+                ),
+                const SizedBox(height: 32),
+                _buildAchievementSection(
+                  '⏱️ Time',
+                  _getAchievementsByCategory('Time'),
+                ),
+                const SizedBox(height: 32),
+                _buildAchievementSection(
+                  '🏆 Milestones',
+                  _getAchievementsByCategory('Milestones'),
+                ),
+              ],
+            ),
+          );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('Achievements'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'achievements',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'achievements', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
   Widget _buildStatCard(String label, String value, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF2A2A2A)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 24, color: const Color(0xFFB4F405)),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+    final isMobile = Responsive.isMobile(context);
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2A2A2A)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: isMobile ? 20 : 24, color: const Color(0xFFB4F405)),
+          SizedBox(width: isMobile ? 8 : 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: isMobile ? 20 : 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9E9E9E),
-                  ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: isMobile ? 11 : 12,
+                  color: const Color(0xFF9E9E9E),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -432,18 +484,29 @@ class _AchievementsPageState extends State<AchievementsPage> {
           ),
         ),
         const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: 2.5,
-          ),
-          itemCount: achievements.length,
-          itemBuilder: (context, index) {
-            return _buildAchievementCard(achievements[index]);
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final spacing = 20.0;
+            final count = Responsive.gridCount(
+              constraints.maxWidth,
+              minTileWidth: 280,
+              maxCount: 2,
+            );
+            final totalSpacing = spacing * (count - 1);
+            final cardWidth = (constraints.maxWidth - totalSpacing) / count;
+
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: achievements
+                  .map(
+                    (achievement) => SizedBox(
+                      width: cardWidth,
+                      child: _buildAchievementCard(achievement),
+                    ),
+                  )
+                  .toList(),
+            );
           },
         ),
       ],

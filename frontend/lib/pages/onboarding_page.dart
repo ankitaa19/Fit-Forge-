@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import '../services/progress_service.dart';
+import '../utils/responsive.dart';
 
 class OnboardingPage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -88,7 +89,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: 320,
+          width: Responsive.dialogWidth(dialogCtx, 320),
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -236,56 +237,69 @@ class _OnboardingPageState extends State<OnboardingPage> {
         // Goal options grid
         Container(
           constraints: const BoxConstraints(maxWidth: 500),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: _fitnessGoals.length,
-            itemBuilder: (context, index) {
-              final goal = _fitnessGoals[index];
-              final isSelected = _selectedFitnessGoal == goal['name'];
-
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedFitnessGoal = goal['name'];
-                  });
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0xFFB4F405)
-                          : const Color(0xFF2A2A2A),
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(goal['emoji'], style: const TextStyle(fontSize: 36)),
-                      const SizedBox(height: 12),
-                      Text(
-                        goal['name'],
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final count = Responsive.gridCount(
+                constraints.maxWidth,
+                minTileWidth: 220,
+                maxCount: 2,
+              );
+              final aspect = count == 1 ? 2.2 : 1.5;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: count,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: aspect,
                 ),
+                itemCount: _fitnessGoals.length,
+                itemBuilder: (context, index) {
+                  final goal = _fitnessGoals[index];
+                  final isSelected = _selectedFitnessGoal == goal['name'];
+
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedFitnessGoal = goal['name'];
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A1A),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFFB4F405)
+                              : const Color(0xFF2A2A2A),
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            goal['emoji'],
+                            style: const TextStyle(fontSize: 36),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            goal['name'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -418,38 +432,37 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 style: TextStyle(fontSize: 16, color: Color(0xFF9E9E9E)),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
                 children: [3, 4, 5, 6].map((days) {
                   final isSelected = _selectedDaysPerWeek == days;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedDaysPerWeek = days;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFFB4F405)
-                              : const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            days.toString(),
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? const Color(0xFF1A1A1A)
-                                  : Colors.white,
-                            ),
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedDaysPerWeek = days;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFB4F405)
+                            : const Color(0xFF2A2A2A),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          days.toString(),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected
+                                ? const Color(0xFF1A1A1A)
+                                : Colors.white,
                           ),
                         ),
                       ),
@@ -465,39 +478,38 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 style: TextStyle(fontSize: 16, color: Color(0xFF9E9E9E)),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
                 children: [15, 20, 30, 45].map((minutes) {
                   final isSelected = _selectedMinutesPerSession == minutes;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedMinutesPerSession = minutes;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedMinutesPerSession = minutes;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFB4F405)
+                            : const Color(0xFF2A2A2A),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${minutes}m',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: isSelected
-                              ? const Color(0xFFB4F405)
-                              : const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${minutes}m',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? const Color(0xFF1A1A1A)
-                                : Colors.white,
-                          ),
+                              ? const Color(0xFF1A1A1A)
+                              : Colors.white,
                         ),
                       ),
                     ),

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../widgets/sidebar.dart';
 import '../services/progress_service.dart';
 import '../services/reminder_service.dart';
+import '../utils/responsive.dart';
 
 class SettingsPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -102,7 +103,7 @@ class _SettingsPageState extends State<SettingsPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            width: 320,
+            width: Responsive.dialogWidth(context, 320),
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -184,7 +185,7 @@ class _SettingsPageState extends State<SettingsPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            width: 320,
+            width: Responsive.dialogWidth(context, 320),
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -264,253 +265,272 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
-        children: [
-          // Sidebar
-          Sidebar(currentPage: 'settings', user: widget.user),
+    final isNarrow = Responsive.isNarrow(context);
+    final pagePadding = Responsive.pagePadding(context);
 
-          // Main Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  const Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+    final mainContent = SingleChildScrollView(
+      padding: pagePadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          const Text(
+            'Settings',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Update your fitness preferences',
+            style: TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+          ),
+          const SizedBox(height: 40),
+
+          // Settings Container
+          Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name
+                const Text(
+                  'Name',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _nameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Update your fitness preferences',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+                ),
+                const SizedBox(height: 32),
+
+                // Fitness Goal
+                const Text(
+                  'Fitness Goal',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
-                  const SizedBox(height: 40),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildGoalButton('Weight Loss'),
+                    _buildGoalButton('Muscle Gain'),
+                    _buildGoalButton('General Fitness'),
+                    _buildGoalButton('Endurance'),
+                    _buildGoalButton('Flexibility & Mobility'),
+                    _buildGoalButton('Core Strength'),
+                  ],
+                ),
+                const SizedBox(height: 32),
 
-                  // Settings Container
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                // Days per week
+                const Text(
+                  'Days per week',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildNumberButton(3),
+                    _buildNumberButton(4),
+                    _buildNumberButton(5),
+                    _buildNumberButton(6),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Minutes per session
+                const Text(
+                  'Minutes per session',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildMinutesButton(15),
+                    _buildMinutesButton(20),
+                    _buildMinutesButton(30),
+                    _buildMinutesButton(45),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Workout Reminders
+                GestureDetector(
+                  onTap: workoutReminders ? _showRemindersListDialog : null,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
                       children: [
-                        // Name
-                        const Text(
-                          'Name',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                        const Icon(
+                          Icons.notifications_none,
+                          color: Colors.white,
+                          size: 24,
                         ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _nameController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFF2A2A2A),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Fitness Goal
-                        const Text(
-                          'Fitness Goal',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            _buildGoalButton('Weight Loss'),
-                            _buildGoalButton('Muscle Gain'),
-                            _buildGoalButton('General Fitness'),
-                            _buildGoalButton('Endurance'),
-                            _buildGoalButton('Flexibility & Mobility'),
-                            _buildGoalButton('Core Strength'),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Days per week
-                        const Text(
-                          'Days per week',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _buildNumberButton(3),
-                            const SizedBox(width: 12),
-                            _buildNumberButton(4),
-                            const SizedBox(width: 12),
-                            _buildNumberButton(5),
-                            const SizedBox(width: 12),
-                            _buildNumberButton(6),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Minutes per session
-                        const Text(
-                          'Minutes per session',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _buildMinutesButton(15),
-                            const SizedBox(width: 12),
-                            _buildMinutesButton(20),
-                            const SizedBox(width: 12),
-                            _buildMinutesButton(30),
-                            const SizedBox(width: 12),
-                            _buildMinutesButton(45),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Workout Reminders
-                        GestureDetector(
-                          onTap: workoutReminders
-                              ? _showRemindersListDialog
-                              : null,
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A1A),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.notifications_none,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Workout Reminders',
+                                style: TextStyle(
+                                  fontSize: 16,
                                   color: Colors.white,
-                                  size: 24,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Workout Reminders',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      if (workoutReminders &&
-                                          _loadedReminders.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 3,
-                                          ),
-                                          child: Text(
-                                            '${_loadedReminders.length} reminder${_loadedReminders.length != 1 ? 's' : ''} active · tap to view',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Color(0xFFB4F405),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
+                              ),
+                              if (workoutReminders &&
+                                  _loadedReminders.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 3),
+                                  child: Text(
+                                    '${_loadedReminders.length} reminder${_loadedReminders.length != 1 ? 's' : ''} active · tap to view',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFFB4F405),
+                                    ),
                                   ),
                                 ),
-                                Switch(
-                                  value: workoutReminders,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      workoutReminders = value;
-                                    });
-                                    if (value) {
-                                      _showReminderSetupModal();
-                                    }
-                                  },
-                                  activeColor: const Color(0xFFB4F405),
-                                  activeTrackColor: const Color(
-                                    0xFFB4F405,
-                                  ).withOpacity(0.5),
-                                  inactiveThumbColor: const Color(0xFF6E6E6E),
-                                  inactiveTrackColor: const Color(0xFF3A3A3A),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 40),
-
-                        // Save Changes Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton.icon(
-                            onPressed: _isSaving ? null : _saveSettings,
-                            icon: _isSaving
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFF1A1A1A),
-                                    ),
-                                  )
-                                : const Icon(Icons.save, size: 20),
-                            label: Text(
-                              _isSaving ? 'Saving...' : 'Save Changes',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB4F405),
-                              foregroundColor: const Color(0xFF1A1A1A),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                          ),
+                        Switch(
+                          value: workoutReminders,
+                          onChanged: (value) {
+                            setState(() {
+                              workoutReminders = value;
+                            });
+                            if (value) {
+                              _showReminderSetupModal();
+                            }
+                          },
+                          activeColor: const Color(0xFFB4F405),
+                          activeTrackColor: const Color(
+                            0xFFB4F405,
+                          ).withOpacity(0.5),
+                          inactiveThumbColor: const Color(0xFF6E6E6E),
+                          inactiveTrackColor: const Color(0xFF3A3A3A),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 40),
+
+                // Save Changes Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _saveSettings,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          )
+                        : const Icon(Icons.save, size: 20),
+                    label: Text(
+                      _isSaving ? 'Saving...' : 'Save Changes',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB4F405),
+                      foregroundColor: const Color(0xFF1A1A1A),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('Settings'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'settings',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'settings', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
@@ -525,7 +545,7 @@ class _SettingsPageState extends State<SettingsPage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
-              width: 360,
+              width: Responsive.dialogWidth(ctx, 360),
               constraints: const BoxConstraints(maxHeight: 520),
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -744,7 +764,7 @@ class _SettingsPageState extends State<SettingsPage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
-              width: 420,
+              width: Responsive.dialogWidth(ctx, 420),
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1021,7 +1041,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                           ),
                                         ),
                                         child: Container(
-                                          width: 320,
+                                          width: Responsive.dialogWidth(
+                                            context,
+                                            320,
+                                          ),
                                           padding: const EdgeInsets.all(24),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
@@ -1109,7 +1132,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                           ),
                                         ),
                                         child: Container(
-                                          width: 320,
+                                          width: Responsive.dialogWidth(
+                                            context,
+                                            320,
+                                          ),
                                           padding: const EdgeInsets.all(24),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,

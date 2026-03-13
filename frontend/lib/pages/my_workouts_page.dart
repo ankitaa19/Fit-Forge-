@@ -3,6 +3,7 @@ import '../widgets/sidebar.dart';
 import '../widgets/workout_session_modal.dart';
 import '../services/exercise_service.dart';
 import '../services/progress_service.dart';
+import '../utils/responsive.dart';
 
 class MyWorkoutsPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -145,14 +146,20 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final size = MediaQuery.of(context).size;
+            final isMobile = Responsive.isMobile(context);
+            final dialogWidth = Responsive.dialogWidth(context, 720);
+            final dialogHeight =
+                (size.height * (isMobile ? 0.9 : 0.75)).toDouble();
+
             return Dialog(
               backgroundColor: const Color(0xFF1A1A1A),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.75,
-                height: MediaQuery.of(context).size.height * 0.75,
+                width: dialogWidth,
+                height: dialogHeight,
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,185 +380,215 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
                               )
                             else
                               // Exercise Grid
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                      childAspectRatio: 1.18,
-                                    ),
-                                itemCount: _availableExercises.length,
-                                itemBuilder: (context, index) {
-                                  final exercise = _availableExercises[index];
-                                  // Support both MongoDB's _id and legacy id
-                                  final exerciseId =
-                                      (exercise['_id'] ?? exercise['id'])
-                                          ?.toString() ??
-                                      '';
-                                  final isSelected = _isExerciseSelected(
-                                    exerciseId,
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final count = Responsive.gridCount(
+                                    constraints.maxWidth,
+                                    minTileWidth: 220,
+                                    maxCount: 3,
                                   );
+                                  final aspect = count == 1 ? 0.9 : 1.18;
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: count,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                          childAspectRatio: aspect,
+                                        ),
+                                    itemCount: _availableExercises.length,
+                                    itemBuilder: (context, index) {
+                                      final exercise =
+                                          _availableExercises[index];
+                                      // Support both MongoDB's _id and legacy id
+                                      final exerciseId =
+                                          (exercise['_id'] ?? exercise['id'])
+                                              ?.toString() ??
+                                          '';
+                                      final isSelected = _isExerciseSelected(
+                                        exerciseId,
+                                      );
 
-                                  // Extract video ID from videoUrls for thumbnail
-                                  String? thumbnailUrl;
-                                  if (exercise['videoUrls'] != null) {
-                                    final videoUrls = exercise['videoUrls'];
-                                    if (videoUrls is List &&
-                                        videoUrls.isNotEmpty) {
-                                      final videoUrl =
-                                          videoUrls[0]?.toString() ?? '';
-                                      if (videoUrl.isNotEmpty &&
-                                          videoUrl.contains('v=')) {
-                                        final videoId = videoUrl
-                                            .split('v=')[1]
-                                            .split('&')[0];
-                                        if (videoId.isNotEmpty) {
-                                          thumbnailUrl =
-                                              'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+                                      // Extract video ID from videoUrls for thumbnail
+                                      String? thumbnailUrl;
+                                      if (exercise['videoUrls'] != null) {
+                                        final videoUrls =
+                                            exercise['videoUrls'];
+                                        if (videoUrls is List &&
+                                            videoUrls.isNotEmpty) {
+                                          final videoUrl =
+                                              videoUrls[0]?.toString() ?? '';
+                                          if (videoUrl.isNotEmpty &&
+                                              videoUrl.contains('v=')) {
+                                            final videoId = videoUrl
+                                                .split('v=')[1]
+                                                .split('&')[0];
+                                            if (videoId.isNotEmpty) {
+                                              thumbnailUrl =
+                                                  'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+                                            }
+                                          }
                                         }
                                       }
-                                    }
-                                  }
 
-                                  return InkWell(
-                                    onTap: () {
-                                      setModalState(() {
-                                        _toggleExerciseSelection(exercise);
-                                      });
-                                    },
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF0F0F0F),
+                                      return InkWell(
+                                        onTap: () {
+                                          setModalState(() {
+                                            _toggleExerciseSelection(exercise);
+                                          });
+                                        },
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? const Color(0xFFB4F405)
-                                              : const Color(0xFF2A2A2A),
-                                          width: isSelected ? 2.5 : 1,
-                                        ),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF0F0F0F),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? const Color(0xFFB4F405)
+                                                  : const Color(0xFF2A2A2A),
+                                              width: isSelected ? 2.5 : 1,
+                                            ),
+                                          ),
+                                          child: Stack(
                                             children: [
-                                              // Thumbnail
-                                              Container(
-                                                height: 160,
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xFF2A2A2A,
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Thumbnail
+                                                  Container(
+                                                    height: 160,
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(
+                                                        0xFF2A2A2A,
+                                                      ),
+                                                      borderRadius:
+                                                          const BorderRadius.only(
+                                                            topLeft: Radius
+                                                                .circular(12),
+                                                            topRight: Radius
+                                                                .circular(12),
+                                                          ),
+                                                      image: thumbnailUrl !=
+                                                              null
+                                                          ? DecorationImage(
+                                                              image:
+                                                                  NetworkImage(
+                                                                thumbnailUrl,
+                                                              ),
+                                                              fit: BoxFit.cover,
+                                                            )
+                                                          : null,
+                                                    ),
+                                                    child: thumbnailUrl == null
+                                                        ? Center(
+                                                            child: Icon(
+                                                              Icons
+                                                                  .fitness_center,
+                                                              size: 48,
+                                                              color: Colors
+                                                                  .grey[600],
+                                                            ),
+                                                          )
+                                                        : null,
                                                   ),
-                                                  borderRadius:
-                                                      const BorderRadius.only(
-                                                        topLeft:
-                                                            Radius.circular(12),
-                                                        topRight:
-                                                            Radius.circular(12),
-                                                      ),
-                                                  image: thumbnailUrl != null
-                                                      ? DecorationImage(
-                                                          image: NetworkImage(
-                                                            thumbnailUrl,
-                                                          ),
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                      : null,
-                                                ),
-                                                child: thumbnailUrl == null
-                                                    ? Center(
-                                                        child: Icon(
-                                                          Icons.fitness_center,
-                                                          size: 48,
-                                                          color:
-                                                              Colors.grey[600],
-                                                        ),
-                                                      )
-                                                    : null,
-                                              ),
-                                              // Info
-                                              Padding(
-                                                padding: const EdgeInsets.all(
-                                                  16,
-                                                ),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    SizedBox(
-                                                      height: 22,
-                                                      child: Text(
-                                                        exercise['title']
-                                                                ?.toString() ??
-                                                            'Exercise',
-                                                        style: const TextStyle(
-                                                          fontSize: 18,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: Colors.white,
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
+                                                  // Info
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                      16,
                                                     ),
-                                                    const SizedBox(height: 4),
-                                                    SizedBox(
-                                                      height: 36,
-                                                      child: Text(
-                                                        exercise['description']
-                                                                ?.toString() ??
-                                                            '',
-                                                        style: const TextStyle(
-                                                          fontSize: 13,
-                                                          color: Color(
-                                                            0xFF9E9E9E,
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        SizedBox(
+                                                          height: 22,
+                                                          child: Text(
+                                                            exercise['title']
+                                                                    ?.toString() ??
+                                                                'Exercise',
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 18,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
                                                         ),
-                                                        maxLines: 2,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
+                                                        const SizedBox(
+                                                          height: 4,
+                                                        ),
+                                                        SizedBox(
+                                                          height: 36,
+                                                          child: Text(
+                                                            exercise['description']
+                                                                    ?.toString() ??
+                                                                '',
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 13,
+                                                              color: Color(
+                                                                0xFF9E9E9E,
+                                                              ),
+                                                            ),
+                                                            maxLines: 2,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                ],
                                               ),
+                                              if (isSelected)
+                                                Positioned(
+                                                  top: 12,
+                                                  right: 12,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                      8,
+                                                    ),
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                      color: Color(0xFFB4F405),
+                                                      shape: BoxShape.circle,
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black26,
+                                                          blurRadius: 8,
+                                                          offset: Offset(0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.check,
+                                                      size: 24,
+                                                      color:
+                                                          Color(0xFF1A1A1A),
+                                                    ),
+                                                  ),
+                                                ),
                                             ],
                                           ),
-                                          if (isSelected)
-                                            Positioned(
-                                              top: 12,
-                                              right: 12,
-                                              child: Container(
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                decoration: const BoxDecoration(
-                                                  color: Color(0xFFB4F405),
-                                                  shape: BoxShape.circle,
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black26,
-                                                      blurRadius: 8,
-                                                      offset: Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: const Icon(
-                                                  Icons.check,
-                                                  size: 24,
-                                                  color: Color(0xFF1A1A1A),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -741,7 +778,7 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            width: 320,
+            width: Responsive.dialogWidth(context, 320),
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -796,7 +833,7 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: 320,
+          width: Responsive.dialogWidth(dialogCtx, 320),
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -973,44 +1010,44 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
-        children: [
-          Sidebar(currentPage: 'workouts', user: widget.user),
-          Expanded(
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'My Workouts',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Create and manage your custom workout routines',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ],
+    final isNarrow = Responsive.isNarrow(context);
+    final isMobile = Responsive.isMobile(context);
+    final headerPadding = Responsive.pagePadding(context);
+
+    final mainContent = Column(
+      children: [
+        // Header
+        Container(
+          padding: headerPadding,
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'My Workouts',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      ElevatedButton.icon(
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create and manage your custom workout routines',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
                         onPressed: _startAddingWorkout,
-                        icon: const Icon(Icons.add, color: Color(0xFF1A1A1A)),
+                        icon: const Icon(
+                          Icons.add,
+                          color: Color(0xFF1A1A1A),
+                        ),
                         label: const Text(
                           'New Workout',
                           style: TextStyle(color: Color(0xFF1A1A1A)),
@@ -1026,17 +1063,94 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'My Workouts',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Create and manage your custom workout routines',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _startAddingWorkout,
+                      icon: const Icon(Icons.add, color: Color(0xFF1A1A1A)),
+                      label: const Text(
+                        'New Workout',
+                        style: TextStyle(color: Color(0xFF1A1A1A)),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB4F405),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+        ),
 
-                // Content
-                Expanded(child: _buildWorkoutsGrid()),
+        // Content
+        Expanded(child: _buildWorkoutsGrid()),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('My Workouts'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'workouts',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'workouts', user: widget.user),
+                Expanded(child: mainContent),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1073,7 +1187,11 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+      padding: Responsive.pagePadding(
+        context,
+        mobile: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        desktop: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+      ),
       child: Column(
         children: _customWorkouts.map((workout) {
           return _buildWorkoutSection(workout);
@@ -1090,19 +1208,29 @@ class _MyWorkoutsPageState extends State<MyWorkoutsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Exercise Cards Grid
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.18,
-          ),
-          itemCount: exercises.length,
-          itemBuilder: (context, index) {
-            final exercise = exercises[index];
-            return _buildExerciseCard(exercise, workout, index);
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final count = Responsive.gridCount(
+              constraints.maxWidth,
+              minTileWidth: 240,
+              maxCount: 3,
+            );
+            final aspect = count == 1 ? 0.9 : 1.18;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: count,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: aspect,
+              ),
+              itemCount: exercises.length,
+              itemBuilder: (context, index) {
+                final exercise = exercises[index];
+                return _buildExerciseCard(exercise, workout, index);
+              },
+            );
           },
         ),
         const SizedBox(height: 32),

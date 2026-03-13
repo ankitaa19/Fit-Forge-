@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
 import '../services/progress_service.dart';
 import 'package:intl/intl.dart';
+import '../utils/responsive.dart';
 
 class HistoryPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -92,124 +93,160 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isNarrow = Responsive.isNarrow(context);
+    final pagePadding = Responsive.pagePadding(context);
+
+    final mainContent = _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(color: Color(0xFFB4F405)),
+          )
+        : SingleChildScrollView(
+            padding: pagePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Workout History',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your complete workout timeline',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Stats Summary
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final count = Responsive.gridCount(
+                      constraints.maxWidth,
+                      minTileWidth: 200,
+                      maxCount: 3,
+                    );
+                    final aspect = count == 1 ? 2.1 : 2.4;
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: count,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: aspect,
+                      children: [
+                        _buildStatCard(
+                          'Sessions',
+                          _totalSessions.toString(),
+                          Icons.event_note,
+                        ),
+                        _buildStatCard(
+                          'Exercises',
+                          _totalExercises.toString(),
+                          Icons.fitness_center,
+                        ),
+                        _buildStatCard(
+                          'Minutes',
+                          _totalMinutes.toString(),
+                          Icons.timer,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // Workout Timeline
+                if (_workoutHistory.isEmpty)
+                  _buildEmptyState()
+                else
+                  _buildWorkoutTimeline(),
+              ],
+            ),
+          );
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
-        children: [
-          Sidebar(currentPage: 'history', user: widget.user),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFB4F405)),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Workout History',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Your complete workout timeline',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[400],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 40),
-
-                        // Stats Summary
-                        Row(
-                          children: [
-                            _buildStatCard(
-                              'Sessions',
-                              _totalSessions.toString(),
-                              Icons.event_note,
-                            ),
-                            const SizedBox(width: 20),
-                            _buildStatCard(
-                              'Exercises',
-                              _totalExercises.toString(),
-                              Icons.fitness_center,
-                            ),
-                            const SizedBox(width: 20),
-                            _buildStatCard(
-                              'Minutes',
-                              _totalMinutes.toString(),
-                              Icons.timer,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 40),
-
-                        // Workout Timeline
-                        if (_workoutHistory.isEmpty)
-                          _buildEmptyState()
-                        else
-                          _buildWorkoutTimeline(),
-                      ],
-                    ),
-                  ),
-          ),
-        ],
-      ),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('History'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'history',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'history', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
   Widget _buildStatCard(String label, String value, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF2A2A2A)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2A2A2A)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 16, color: const Color(0xFF9E9E9E)),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF9E9E9E),
-                  ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: const Color(0xFF9E9E9E)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9E9E9E),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

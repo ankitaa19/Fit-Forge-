@@ -3,6 +3,7 @@ import '../widgets/sidebar.dart';
 import '../widgets/workout_session_modal.dart';
 import '../services/exercise_service.dart';
 import '../services/progress_service.dart';
+import '../utils/responsive.dart';
 
 class ExercisesPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -147,7 +148,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
-              width: 320,
+              width: Responsive.dialogWidth(context, 320),
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -310,288 +311,316 @@ class _ExercisesPageState extends State<ExercisesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Row(
-        children: [
-          // Sidebar
-          Sidebar(currentPage: 'exercises', user: widget.user),
+    final isNarrow = Responsive.isNarrow(context);
+    final isMobile = Responsive.isMobile(context);
+    final horizontalPadding = isNarrow ? 16.0 : 32.0;
 
-          // Main Content
-          Expanded(
-            child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  )
-                : _exercises.isEmpty
-                ? _buildEmptyState()
-                : Column(
-                    children: [
-                      // Fixed Header Section
-                      Container(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Header
-                            Row(
-                              children: [
-                                Text(
-                                  '$_currentFitnessGoal Exercise Library',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  '${_exercises.length} exercises',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
+    final searchBar = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).primaryColor,
+          width: 2,
+        ),
+      ),
+      child: TextField(
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        decoration: InputDecoration(
+          hintText: 'Search exercises, muscles, categories...',
+          hintStyle: TextStyle(color: Theme.of(context).disabledColor),
+          border: InputBorder.none,
+          icon: Icon(Icons.search, color: Theme.of(context).disabledColor),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+      ),
+    );
 
-                            // Search Bar with Level Filter Dropdown
-                            Row(
-                              children: [
-                                // Search Bar (80%)
-                                Expanded(
-                                  flex: 80,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).cardColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Theme.of(context).primaryColor,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: TextField(
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _searchQuery = value;
-                                        });
-                                      },
-                                      style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText:
-                                            'Search exercises, muscles, categories...',
-                                        hintStyle: TextStyle(
-                                          color: Theme.of(
-                                            context,
-                                          ).disabledColor,
-                                        ),
-                                        border: InputBorder.none,
-                                        icon: Icon(
-                                          Icons.search,
-                                          color: Theme.of(
-                                            context,
-                                          ).disabledColor,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                // Level Filter Dropdown (20%)
-                                Expanded(
-                                  flex: 20,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _selectedLevel != 'All'
-                                          ? Theme.of(context).primaryColor
-                                          : Theme.of(context).cardColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: _selectedLevel == 'All'
-                                          ? Border.all(
-                                              color: Theme.of(
-                                                context,
-                                              ).primaryColor,
-                                              width: 2,
-                                            )
-                                          : null,
-                                    ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        value: _selectedLevel,
-                                        isExpanded: true,
-                                        dropdownColor: Theme.of(
-                                          context,
-                                        ).cardColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        elevation: 8,
-                                        menuMaxHeight: 300,
-                                        icon: Icon(
-                                          Icons.arrow_drop_down,
-                                          color: _selectedLevel != 'All'
-                                              ? Theme.of(
-                                                  context,
-                                                ).scaffoldBackgroundColor
-                                              : Theme.of(context).primaryColor,
-                                        ),
-                                        selectedItemBuilder:
-                                            (BuildContext context) {
-                                              return [
-                                                'All',
-                                                'Beginner',
-                                                'Intermediate',
-                                                'Advanced',
-                                              ].map<Widget>((String item) {
-                                                return Center(
-                                                  child: Text(
-                                                    item,
-                                                    style: TextStyle(
-                                                      color:
-                                                          _selectedLevel !=
-                                                              'All'
-                                                          ? const Color(
-                                                              0xFF1A1A1A,
-                                                            )
-                                                          : Colors.white,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList();
-                                            },
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        onChanged: (String? newValue) {
-                                          if (newValue != null) {
-                                            setState(() {
-                                              _selectedLevel = newValue;
-                                            });
-                                          }
-                                        },
-                                        items:
-                                            [
-                                              'All',
-                                              'Beginner',
-                                              'Intermediate',
-                                              'Advanced',
-                                            ].asMap().entries.map<
-                                              DropdownMenuItem<String>
-                                            >((entry) {
-                                              int idx = entry.key;
-                                              String value = entry.value;
-                                              bool isLast = idx == 3;
-                                              return DropdownMenuItem<String>(
-                                                value: value,
-                                                alignment:
-                                                    AlignmentDirectional.center,
-                                                child: Column(
-                                                  children: [
-                                                    Container(
-                                                      width: double.infinity,
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            vertical: 12,
-                                                          ),
-                                                      child: Text(
-                                                        value,
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    if (!isLast)
-                                                      Container(
-                                                        height: 2,
-                                                        color: const Color(
-                                                          0xFFB4F405,
-                                                        ),
-                                                      ),
-                                                  ],
-                                                ),
-                                              );
-                                            }).toList(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Category Filters - Dynamic based on fitness goal
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: _categoryTabs.map((tab) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 12),
-                                    child: _buildCategoryChip(
-                                      tab['label'] as String,
-                                      tab['icon'] as IconData?,
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
+    final levelFilter = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: _selectedLevel != 'All'
+            ? Theme.of(context).primaryColor
+            : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: _selectedLevel == 'All'
+            ? Border.all(
+                color: Theme.of(context).primaryColor,
+                width: 2,
+              )
+            : null,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedLevel,
+          isExpanded: true,
+          dropdownColor: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+          elevation: 8,
+          menuMaxHeight: 300,
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: _selectedLevel != 'All'
+                ? Theme.of(context).scaffoldBackgroundColor
+                : Theme.of(context).primaryColor,
+          ),
+          selectedItemBuilder: (BuildContext context) {
+            return ['All', 'Beginner', 'Intermediate', 'Advanced']
+                .map<Widget>((String item) {
+              return Center(
+                child: Text(
+                  item,
+                  style: TextStyle(
+                    color: _selectedLevel != 'All'
+                        ? const Color(0xFF1A1A1A)
+                        : Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList();
+          },
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _selectedLevel = newValue;
+              });
+            }
+          },
+          items: ['All', 'Beginner', 'Intermediate', 'Advanced']
+              .asMap()
+              .entries
+              .map<DropdownMenuItem<String>>((entry) {
+            int idx = entry.key;
+            String value = entry.value;
+            bool isLast = idx == 3;
+            return DropdownMenuItem<String>(
+              value: value,
+              alignment: AlignmentDirectional.center,
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
+                    ),
+                  ),
+                  if (!isLast)
+                    Container(
+                      height: 2,
+                      color: const Color(0xFFB4F405),
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
 
-                      // Scrollable Exercise Grid
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(32, 8, 32, 32),
-                          child: GridView.builder(
+    final mainContent = _isLoading
+        ? Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
+          )
+        : _exercises.isEmpty
+            ? _buildEmptyState()
+            : Column(
+                children: [
+                  // Fixed Header Section
+                  Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      horizontalPadding,
+                      horizontalPadding,
+                      0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        isMobile
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$_currentFitnessGoal Exercise Library',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${_exercises.length} exercises',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Text(
+                                    '$_currentFitnessGoal Exercise Library',
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '${_exercises.length} exercises',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        const SizedBox(height: 24),
+
+                        // Search Bar with Level Filter Dropdown
+                        isMobile
+                            ? Column(
+                                children: [
+                                  searchBar,
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: levelFilter,
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(flex: 80, child: searchBar),
+                                  const SizedBox(width: 12),
+                                  Expanded(flex: 20, child: levelFilter),
+                                ],
+                              ),
+                        const SizedBox(height: 24),
+
+                        // Category Filters - Dynamic based on fitness goal
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _categoryTabs.map((tab) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: _buildCategoryChip(
+                                  tab['label'] as String,
+                                  tab['icon'] as IconData?,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+
+                  // Scrollable Exercise Grid
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        8,
+                        horizontalPadding,
+                        horizontalPadding,
+                      ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final count = Responsive.gridCount(
+                            constraints.maxWidth,
+                            minTileWidth: 240,
+                            maxCount: 3,
+                          );
+                          final aspect = count == 1 ? 0.9 : 1.18;
+                          return GridView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: count,
                                   crossAxisSpacing: 20,
                                   mainAxisSpacing: 20,
-                                  childAspectRatio: 1.18,
+                                  childAspectRatio: aspect,
                                 ),
                             itemCount: _filteredExercises.length,
                             itemBuilder: (context, index) {
                               final exercise = _filteredExercises[index];
                               return _buildExerciseCard(exercise);
                             },
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                    ],
+                    ),
                   ),
-          ),
-        ],
-      ),
+                ],
+              );
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('Exercises'),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              elevation: 0,
+              iconTheme: IconThemeData(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              titleTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'exercises',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'exercises', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 

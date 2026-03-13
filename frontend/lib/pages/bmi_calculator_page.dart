@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
 import 'dart:math';
+import '../utils/responsive.dart';
 
 class BMICalculatorPage extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -31,7 +32,7 @@ class _BMICalculatorPageState extends State<BMICalculatorPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            width: 320,
+            width: Responsive.dialogWidth(dialogCtx, 320),
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -141,56 +142,58 @@ class _BMICalculatorPageState extends State<BMICalculatorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Row(
-        children: [
-          Sidebar(currentPage: 'bmi', user: widget.user),
-          Expanded(
+    final isNarrow = Responsive.isNarrow(context);
+    final isMobile = Responsive.isMobile(context);
+    final pagePadding = Responsive.pagePadding(context);
+
+    final mainContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: pagePadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'BMI Calculator',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Check your Body Mass Index',
+                style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+              ),
+            ],
+          ),
+        ),
+        // Content
+        Expanded(
+          child: SingleChildScrollView(
+            padding: Responsive.pagePadding(
+              context,
+              mobile: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              desktop: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'BMI Calculator',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Check your Body Mass Index',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                      ),
-                    ],
+                // Calculator Container
+                Container(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  padding: EdgeInsets.all(isMobile ? 24 : 32),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF2A2A2A)),
                   ),
-                ),
-                // Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Calculator Container
-                        Container(
-                          constraints: const BoxConstraints(maxWidth: 600),
-                          padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A1A1A),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFF2A2A2A)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                               // Weight Input
                               const Text(
                                 'Weight (kg)',
@@ -430,18 +433,50 @@ class _BMICalculatorPageState extends State<BMICalculatorPage> {
                                   ),
                                 ),
                               ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      appBar: isNarrow
+          ? AppBar(
+              title: const Text('BMI Calculator'),
+              backgroundColor: const Color(0xFF0F0F0F),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          : null,
+      drawer: isNarrow
+          ? Drawer(
+              child: SafeArea(
+                child: Sidebar(
+                  currentPage: 'bmi',
+                  user: widget.user,
+                  onItemSelected: () => Navigator.of(context).pop(),
+                ),
+              ),
+            )
+          : null,
+      body: isNarrow
+          ? mainContent
+          : Row(
+              children: [
+                Sidebar(currentPage: 'bmi', user: widget.user),
+                Expanded(child: mainContent),
+              ],
+            ),
     );
   }
 
@@ -464,8 +499,10 @@ class _BMICalculatorPageState extends State<BMICalculatorPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          alignment: WrapAlignment.spaceBetween,
           children: [
             _buildScaleLabel('Under 18.5', true),
             _buildScaleLabel('18.5 - 24.9', false),
